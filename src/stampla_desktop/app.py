@@ -15,7 +15,7 @@ from pathlib import Path
 from stampla.config import ConfigError
 from PySide6 import QtCore, QtWidgets
 
-from stampla_desktop import theme, verify
+from stampla_desktop import history, theme, verify
 from stampla_desktop.base import Archive, Page, load_archive
 from stampla_desktop.overview import OverviewPage
 
@@ -28,7 +28,10 @@ class ViewSpec:
 
 
 #: the sidebar, in order; Overview derives its task cards from this
-VIEWS: tuple[ViewSpec, ...] = (ViewSpec("Verify", verify.BLURB, verify.VerifyPage),)
+VIEWS: tuple[ViewSpec, ...] = (
+    ViewSpec("Verify", verify.BLURB, verify.VerifyPage),
+    ViewSpec("History", history.BLURB, history.HistoryPage),
+)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -70,6 +73,13 @@ class MainWindow(QtWidgets.QMainWindow):
         item = self.sidebar.item(self.stack.indexOf(page))
         if item is not None:
             item.setText(text)
+
+    def refresh_history(self) -> None:
+        """Applying views tell History that the record grew."""
+        for index in range(self.stack.count()):
+            widget = self.stack.widget(index)
+            if isinstance(widget, history.HistoryPage):
+                widget.refresh()
 
 
 def pick_config(settings: QtCore.QSettings) -> Path | None:

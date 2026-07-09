@@ -17,3 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Verify view: findings in library order colored by library severity,
   plain-language explanations, structured date-mismatch details, live
   progress and Stop.
+- History view: every run against the archive with its originating
+  command, timestamp and status; Undo for applied runs, Resume for
+  interrupted ones.
