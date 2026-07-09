@@ -31,3 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   issues it.
 - Organize view: report-only triage of messy folders with a hand-off
   to Import for confirmed batches.
+- DAM hand-off in the Rename view: masters the DAM must rename itself
+  are listed with their tokens and the in-DAM checklist; writing tokens
+  is its own confirmed action, verified by reading each token back.
