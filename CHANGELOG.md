@@ -29,3 +29,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Import view: card to archive with live progress, problem list and
   the safe-to-format verdict — green only when the library itself
   issues it.
+- Organize view: report-only triage of messy folders with a hand-off
+  to Import for confirmed batches.
