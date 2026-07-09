@@ -191,11 +191,21 @@ class ImportPage(Page):
         moved = sum(len(move.renames) for move in plan.moves)
         already = counted.get(Bucket.ALREADY_IMPORTED, 0)
         ignored = counted.get(Bucket.IGNORED, 0)
-        verb = "copied and verified" if applied else "would be copied"
-        summary = (
-            f"<b>{moved:,}</b> file(s) in <b>{len(plan.moves):,}</b> group(s) {verb}"
-            f" · {already:,} already in the archive · {ignored:,} ignored by policy"
-        )
+        failed = counted.get(Bucket.APPLY_FAILED, 0)
+        if applied:
+            # report.ok is the library's count of groups copied AND verified;
+            # never derive success from the plan when some groups failed
+            verb = f"<b>{report.ok:,}</b> group(s) copied and verified"
+            if failed:
+                verb += (
+                    f' · <span style="color:{theme.PALETTE["crit"]}"><b>{failed:,}'
+                    "</b> group(s) FAILED</span>"
+                )
+        else:
+            verb = (
+                f"<b>{moved:,}</b> file(s) in <b>{len(plan.moves):,}</b> group(s) would be copied"
+            )
+        summary = f"{verb} · {already:,} already in the archive · {ignored:,} ignored by policy"
         self.add_card(rich_label(summary))
 
         problems = [f for f in report.findings if f.bucket.severity.value in ("alarm", "attention")]

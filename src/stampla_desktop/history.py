@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
 BLURB = "Every change ever applied, newest first — with Undo, and Resume for interrupted runs."
 
+MAX_ROWS = 200
+
 #: journal status → (palette key, what the state means here)
 STATUS_STYLE = {
     "complete": ("ok", "applied"),
@@ -41,6 +43,7 @@ class HistoryPage(Page):
             "Every change Stampla has applied to this archive, newest first."
             " Undo re-verifies copied files before deleting anything."
         )
+        self.busy = False
         refresh_button = QtWidgets.QPushButton("Refresh")
         refresh_button.clicked.connect(self.refresh)
         self.toolbar.addWidget(refresh_button)
@@ -59,7 +62,15 @@ class HistoryPage(Page):
         if not summaries:
             self.add_card(rich_label("No changes recorded for this archive yet."))
             return
-        for summary in reversed(summaries):
+        newest_first = list(reversed(summaries))
+        if len(newest_first) > MAX_ROWS:
+            self.add_card(
+                rich_label(
+                    f"Showing the {MAX_ROWS} most recent of {len(newest_first):,} runs —"
+                    " older journals remain on disk and in the history command."
+                )
+            )
+        for summary in newest_first[:MAX_ROWS]:
             color_key, meaning = STATUS_STYLE.get(summary.status, ("muted", ""))
             color = theme.PALETTE[color_key]
             frame, layout = card()
@@ -102,12 +113,15 @@ class HistoryPage(Page):
             command=cli("undo", path),
         ):
             return
+        if self.busy:
+            return
+        self.busy = True
         self.status("Undoing…")
         run_async(
             self,
             lambda: undo_journal(Journal.load(path)),
             self._undone,
-            self.status,
+            self._failed,
         )
 
     def confirm_resume(self, path: Path) -> None:
@@ -119,15 +133,23 @@ class HistoryPage(Page):
             command=cli("resume", path),
         ):
             return
+        if self.busy:
+            return
+        self.busy = True
         self.status("Resuming…")
         run_async(
             self,
             lambda: apply_plan(Journal.load(path)),
             self._resumed,
-            self.status,
+            self._failed,
         )
 
+    def _failed(self, message: str) -> None:
+        self.busy = False
+        self.status(message)
+
     def _undone(self, result: object) -> None:
+        self.busy = False
         assert isinstance(result, ApplyResult)
         self.status(
             f"Undo: {len(result.applied)} family(ies) reverted,"
@@ -136,6 +158,7 @@ class HistoryPage(Page):
         self.refresh()
 
     def _resumed(self, result: object) -> None:
+        self.busy = False
         assert isinstance(result, ApplyResult)
         self.status(
             f"Resume: {len(result.applied)} family(ies) applied,"

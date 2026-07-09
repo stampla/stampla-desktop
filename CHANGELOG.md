@@ -34,3 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DAM hand-off in the Rename view: masters the DAM must rename itself
   are listed with their tokens and the in-DAM checklist; writing tokens
   is its own confirmed action, verified by reading each token back.
+- Hardening for huge archives: capped rendering with exact counts
+  everywhere, accurate post-apply import summaries (failed groups are
+  never reported as copied), History capped and guarded against
+  double-clicks.

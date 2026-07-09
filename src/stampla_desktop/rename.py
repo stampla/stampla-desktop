@@ -283,7 +283,9 @@ class RenamePage(Page):
         if not moves:
             self.add_card(rich_label("Every name matches — nothing to rename."))
             return
-        self.add_card(rich_label(f"<b>{total} rename(s)</b> planned in {len(moves)} family(ies):"))
+        self.add_card(
+            rich_label(f"<b>{total:,} rename(s)</b> planned in {len(moves):,} family(ies):")
+        )
         frame, layout = card()
         muted, faint = theme.PALETTE["muted"], theme.PALETTE["faint"]
         root = self.archive.root
@@ -299,7 +301,7 @@ class RenamePage(Page):
                     )
                 )
         if len(moves) > 200:
-            more = QtWidgets.QLabel(f"…and {len(moves) - 200} more families")
+            more = QtWidgets.QLabel(f"…and {len(moves) - 200:,} more families")
             more.setObjectName("faint")
             layout.addWidget(more)
         self.add_card(frame)

@@ -110,7 +110,7 @@ class VerifyPage(Page):
         summary = rich_label(
             f"scanned <b>{report.scanned:,}</b> files in <b>{report.families:,}</b>"
             f' families — <span style="color:{ok_color}"><b>{report.ok:,} ok</b></span>,'
-            f" {len(report.findings)} findings"
+            f" {len(report.findings):,} findings"
         )
         self.add_card(summary)
 
@@ -125,7 +125,7 @@ class VerifyPage(Page):
             frame, layout = card()
             layout.addWidget(
                 rich_label(
-                    f'<span style="color:{color}"><b>{len(findings)} · '
+                    f'<span style="color:{color}"><b>{len(findings):,} · '
                     f"{buckets.TITLE[bucket]}</b></span>"
                     f'&nbsp;&nbsp;<span style="color:{theme.PALETTE["muted"]}">'
                     f"{buckets.EXPLAIN[bucket]}</span>"
@@ -142,7 +142,7 @@ class VerifyPage(Page):
                     )
                 )
             if len(findings) > 100:
-                more = QtWidgets.QLabel(f"…and {len(findings) - 100} more")
+                more = QtWidgets.QLabel(f"…and {len(findings) - 100:,} more")
                 more.setObjectName("faint")
                 layout.addWidget(more)
             self.add_card(frame)
