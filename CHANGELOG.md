@@ -12,3 +12,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dark theme: graphite palette with a safelight-amber accent.
 - Background worker: library calls run off the UI thread with
   throttled progress events and a cooperative stop flag.
+- Application shell: archive-centric window with a sidebar of views
+  and an Overview of the archive and its trees.
