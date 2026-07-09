@@ -29,6 +29,8 @@ $ mypy
 $ pytest --cov=stampla_desktop
 ```
 
+All four must pass; coverage is gated at 85%.
+
 ## Expectations
 
 - Every change ships with tests and any needed documentation in the same

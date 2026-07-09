@@ -25,3 +25,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Terminal transparency: a quiet >_ toggle reveals each action's
   exact CLI command with Copy, and confirmation dialogs carry the
   command under Show Details.
+- Demo archive generator for a safe tour of every view.

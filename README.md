@@ -14,6 +14,29 @@ click away.
 
 Early development.
 
+## Run
+
+```console
+$ stampla-desktop [archive.toml]
+```
+
+Without an argument the app asks for an archive configuration and
+remembers it. Everything is a dry run until Apply, which confirms
+first; every applied change lands in History with Undo (and Resume,
+for interrupted runs).
+
+## Demo archive
+
+Builds a small throwaway archive under `demo/archive` (macOS: uses
+`sips`), imports it through the real engine, then plants a date edit,
+an unnamed file and an orphan sidecar so every view has something to
+show:
+
+```console
+$ python demo/make_demo.py
+$ stampla-desktop demo/demo.toml
+```
+
 ## Requirements
 
 - Python 3.11+
