@@ -14,3 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   throttled progress events and a cooperative stop flag.
 - Application shell: archive-centric window with a sidebar of views
   and an Overview of the archive and its trees.
+- Verify view: findings in library order colored by library severity,
+  plain-language explanations, structured date-mismatch details, live
+  progress and Stop.

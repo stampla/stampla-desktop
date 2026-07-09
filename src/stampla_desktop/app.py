@@ -15,7 +15,7 @@ from pathlib import Path
 from stampla.config import ConfigError
 from PySide6 import QtCore, QtWidgets
 
-from stampla_desktop import theme
+from stampla_desktop import theme, verify
 from stampla_desktop.base import Archive, Page, load_archive
 from stampla_desktop.overview import OverviewPage
 
@@ -28,7 +28,7 @@ class ViewSpec:
 
 
 #: the sidebar, in order; Overview derives its task cards from this
-VIEWS: tuple[ViewSpec, ...] = ()
+VIEWS: tuple[ViewSpec, ...] = (ViewSpec("Verify", verify.BLURB, verify.VerifyPage),)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -64,6 +64,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def go(self, index: int) -> None:
         self.sidebar.setCurrentRow(index)
+
+    def update_sidebar_label(self, page: Page, text: str) -> None:
+        """Views report their state through their sidebar entry."""
+        item = self.sidebar.item(self.stack.indexOf(page))
+        if item is not None:
+            item.setText(text)
 
 
 def pick_config(settings: QtCore.QSettings) -> Path | None:
