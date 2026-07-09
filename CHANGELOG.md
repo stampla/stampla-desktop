@@ -26,3 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exact CLI command with Copy, and confirmation dialogs carry the
   command under Show Details.
 - Demo archive generator for a safe tour of every view.
+- Import view: card to archive with live progress, problem list and
+  the safe-to-format verdict — green only when the library itself
+  issues it.

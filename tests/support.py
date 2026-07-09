@@ -44,6 +44,7 @@ def spin(app: QtWidgets.QApplication, done: Callable[[], bool], timeout: float =
 
 
 def write_config(root: Path) -> Path:
+    root.mkdir(parents=True, exist_ok=True)
     config = root / "config.toml"
     config.write_text(CONFIG_TEMPLATE.format(root=str(root)))
     return config
@@ -69,3 +70,13 @@ def make_master(directory: Path, capture: str, seasoning: bytes = b"") -> Path:
     named = directory / f"{compact}_{digest[:8]}.jpg"
     scratch.rename(named)
     return named
+
+
+def page_of(window: object, kind: type) -> object:
+    """The window's page of the given type; sidebar order is not our contract."""
+    stack = window.stack  # type: ignore[attr-defined]
+    for index in range(stack.count()):
+        widget = stack.widget(index)
+        if isinstance(widget, kind):
+            return widget
+    raise AssertionError(f"no {kind.__name__} in the stack")
