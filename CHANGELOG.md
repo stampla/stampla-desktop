@@ -22,3 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   interrupted ones.
 - Rename view: the plan as old → new with the changed span
   highlighted, families kept whole, apply with confirm and Stop.
+- Terminal transparency: a quiet >_ toggle reveals each action's
+  exact CLI command with Copy, and confirmation dialogs carry the
+  command under Show Details.

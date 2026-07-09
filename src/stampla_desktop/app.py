@@ -40,6 +40,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.archive = archive
         self.settings = QtCore.QSettings("stampla", "desktop")
+        self._cli_pages: list[Page] = []
         self.setWindowTitle(f"Stampla — {archive.root.name}")
 
         self.sidebar = QtWidgets.QListWidget()
@@ -56,6 +57,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.sidebar.currentRowChanged.connect(self.stack.setCurrentIndex)
         self.sidebar.setCurrentRow(0)
+        self.set_cli(bool(self.settings.value("show_cli", False, type=bool)))
 
         central = QtWidgets.QWidget()
         layout = QtWidgets.QHBoxLayout(central)
@@ -81,6 +83,18 @@ class MainWindow(QtWidgets.QMainWindow):
             widget = self.stack.widget(index)
             if isinstance(widget, history.HistoryPage):
                 widget.refresh()
+
+    def register_cli(self, page: Page) -> None:
+        self._cli_pages.append(page)
+
+    def set_cli(self, visible: bool) -> None:
+        """Show or hide the terminal equivalents everywhere at once."""
+        for page in self._cli_pages:
+            page.cli_toggle.setChecked(visible)
+            page.cli_panel.setVisible(visible)
+            if visible:
+                page.cli_panel.refresh()
+        self.settings.setValue("show_cli", visible)
 
 
 def pick_config(settings: QtCore.QSettings) -> Path | None:

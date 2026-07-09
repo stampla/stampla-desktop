@@ -17,7 +17,7 @@ from stampla.journal import Journal, journal_summaries
 from PySide6 import QtCore, QtWidgets
 
 from stampla_desktop import theme
-from stampla_desktop.base import Page, card, confirm, rich_label, when
+from stampla_desktop.base import Page, card, cli, confirm, rich_label, when
 from stampla_desktop.worker import run_async
 
 if TYPE_CHECKING:
@@ -45,6 +45,12 @@ class HistoryPage(Page):
         refresh_button.clicked.connect(self.refresh)
         self.toolbar.addWidget(refresh_button)
         self.toolbar.addStretch()
+        self.add_cli(
+            lambda: [
+                ("List history", cli("history", "--root", self.archive.root)),
+                ("Undo the most recent", cli("undo", "--latest")),
+            ]
+        )
         self.refresh()
 
     def refresh(self) -> None:
@@ -93,6 +99,7 @@ class HistoryPage(Page):
             "Undo",
             f"Revert {path.name}?",
             "Files edited since are re-verified and refused, never deleted.",
+            command=cli("undo", path),
         ):
             return
         self.status("Undoing…")
@@ -109,6 +116,7 @@ class HistoryPage(Page):
             "Resume",
             f"Finish {path.name}?",
             "Families already done are skipped; the remaining ones are applied.",
+            command=cli("resume", path),
         ):
             return
         self.status("Resuming…")

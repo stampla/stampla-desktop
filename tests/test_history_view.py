@@ -65,7 +65,7 @@ class TestHistoryView:
 
         window = MainWindow(load_archive(config))
         page = history_page(window)
-        monkeypatch.setattr(history_module, "confirm", lambda *args: True)
+        monkeypatch.setattr(history_module, "confirm", lambda *args, **kwargs: True)
         page.confirm_undo(journal.path)
         spin(qapp, lambda: (tmp_path / "a.bin").exists())
         assert "undone" in labels_text(page)
@@ -91,7 +91,7 @@ class TestHistoryView:
         page = history_page(window)
         assert "partial" in labels_text(page)
 
-        monkeypatch.setattr(history_module, "confirm", lambda *args: True)
+        monkeypatch.setattr(history_module, "confirm", lambda *args, **kwargs: True)
         page.confirm_resume(journal.path)
         spin(qapp, lambda: (tmp_path / "b2.bin").exists())
         assert "complete" in labels_text(page)

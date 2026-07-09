@@ -4,12 +4,19 @@ Every view is a :class:`Page`: a title, a toolbar, and a scrollable
 body of cards. Pages that run long library calls add work controls —
 a progress bar fed by the worker's events and a Stop button that
 cancels at the library's next safe point.
+
+GUI and CLI are meant to be used interchangeably, so every action can
+show its exact terminal equivalent: a quiet ``>_`` toggle reveals a
+panel of copyable commands, and confirmation dialogs carry the command
+under Show Details.
 """
 
 from __future__ import annotations
 
 import html
+import shlex
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -99,16 +106,72 @@ def diff_html(old: str, new: str) -> str:
     )
 
 
-def confirm(parent: QtWidgets.QWidget, title: str, question: str, note: str) -> bool:
+def cli(*args: object) -> str:
+    """The exact terminal command for an action."""
+    return "stampla " + shlex.join(str(arg) for arg in args)
+
+
+def confirm(
+    parent: QtWidgets.QWidget,
+    title: str,
+    question: str,
+    note: str,
+    command: str | None = None,
+) -> bool:
+    """Yes/Cancel dialog; the terminal equivalent sits under Show Details."""
     box = QtWidgets.QMessageBox(parent)
     box.setWindowTitle(title)
     box.setText(question)
     box.setInformativeText(note)
+    if command is not None:
+        box.setDetailedText(f"Terminal equivalent:\n\n$ {command}")
     box.setStandardButtons(
         QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.Cancel
     )
     box.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Cancel)
     return box.exec() == QtWidgets.QMessageBox.StandardButton.Yes
+
+
+class CliPanel(QtWidgets.QFrame):
+    """The terminal equivalents of a page's actions, with Copy."""
+
+    def __init__(self, page: Page, provider: Callable[[], list[tuple[str, str]]]) -> None:
+        super().__init__()
+        self.setObjectName("cli")
+        self.page = page
+        self.provider = provider
+        self.rows = QtWidgets.QVBoxLayout(self)
+        self.rows.setContentsMargins(12, 10, 12, 10)
+        self.rows.setSpacing(6)
+        self.setVisible(False)
+
+    def refresh(self) -> None:
+        clear_layout(self.rows)
+        faint = theme.PALETTE["faint"]
+        for label, command in self.provider():
+            row = QtWidgets.QWidget()
+            layout = QtWidgets.QHBoxLayout(row)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(10)
+            tag = QtWidgets.QLabel(label)
+            tag.setObjectName("faint")
+            layout.addWidget(tag)
+            layout.addWidget(
+                rich_label(
+                    f'<span style="color:{faint}">$</span>'
+                    f' <span style="{MONO}">{html.escape(command)}</span>'
+                ),
+                1,
+            )
+            copy_button = QtWidgets.QPushButton("Copy")
+            copy_button.setObjectName("copy")
+            copy_button.clicked.connect(lambda _=False, c=command: self.copy(c))
+            layout.addWidget(copy_button, 0, QtCore.Qt.AlignmentFlag.AlignTop)
+            self.rows.addWidget(row)
+
+    def copy(self, command: str) -> None:
+        QtWidgets.QApplication.clipboard().setText(command)
+        self.page.status(f"Copied — paste into a terminal: {command}")
 
 
 class Page(QtWidgets.QWidget):
@@ -198,3 +261,15 @@ class Page(QtWidgets.QWidget):
         counted = f" of {event.total}" if event.total else ""
         name = f" — {event.path.name}" if event.path is not None else ""
         self.status(f"{event.phase}: {event.done}{counted}{name}")
+
+    def add_cli(self, provider: Callable[[], list[tuple[str, str]]]) -> None:
+        """A quiet ``>_`` toggle revealing the actions' terminal commands."""
+        self.cli_panel = CliPanel(self, provider)
+        self._outer.insertWidget(3, self.cli_panel)
+        self.cli_toggle = QtWidgets.QPushButton(">_")
+        self.cli_toggle.setObjectName("cliToggle")
+        self.cli_toggle.setCheckable(True)
+        self.cli_toggle.setToolTip("Show the terminal command for these actions")
+        self.cli_toggle.clicked.connect(self.window_.set_cli)
+        self.toolbar.addWidget(self.cli_toggle)
+        self.window_.register_cli(self)

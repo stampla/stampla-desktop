@@ -16,7 +16,7 @@ from stampla.verify import VerifyOptions, run_verify
 from PySide6 import QtWidgets
 
 from stampla_desktop import buckets, theme
-from stampla_desktop.base import MONO, Page, card, relative, rich_label
+from stampla_desktop.base import MONO, Page, card, cli, relative, rich_label
 from stampla_desktop.worker import run_monitored
 
 if TYPE_CHECKING:
@@ -42,6 +42,16 @@ class VerifyPage(Page):
         self.toolbar.addWidget(self.recheck)
         self.toolbar.addStretch()
         self.add_work_controls()
+        self.add_cli(self.cli_commands)
+        self.recheck.toggled.connect(lambda _: self.cli_panel.refresh())
+
+    def cli_commands(self) -> list[tuple[str, str]]:
+        base = ["verify", "--config", self.archive.config_path]
+        extra = ["--full"] if self.recheck.isChecked() else []
+        return [
+            ("Check everything", cli(*base, *extra)),
+            ("Check names (fast)", cli(*base, "--skip-hash", *extra)),
+        ]
 
     def start(self, skip_hash: bool) -> None:
         if self.busy:

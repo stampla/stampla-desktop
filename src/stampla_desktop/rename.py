@@ -17,7 +17,16 @@ from stampla.report import Report
 from PySide6 import QtWidgets
 
 from stampla_desktop import theme
-from stampla_desktop.base import MONO, Page, card, confirm, diff_html, relative, rich_label
+from stampla_desktop.base import (
+    MONO,
+    Page,
+    card,
+    cli,
+    confirm,
+    diff_html,
+    relative,
+    rich_label,
+)
 from stampla_desktop.worker import run_monitored
 
 if TYPE_CHECKING:
@@ -47,6 +56,14 @@ class RenamePage(Page):
         self.toolbar.addWidget(self.apply_button)
         self.toolbar.addStretch()
         self.add_work_controls()
+        self.add_cli(self.cli_commands)
+
+    def cli_commands(self) -> list[tuple[str, str]]:
+        base = ["rename", "--config", self.archive.config_path]
+        return [
+            ("Preview", cli(*base)),
+            ("Apply", cli(*base, "--apply")),
+        ]
 
     def start(self, apply: bool) -> None:
         if self.busy:
@@ -76,6 +93,7 @@ class RenamePage(Page):
             "Apply renames",
             f"Rename {total} file(s) in {len(self.moves)} family(ies)?",
             "The plan is journaled first and can be undone from History.",
+            command=cli("rename", "--config", self.archive.config_path, "--apply"),
         ):
             self.start(apply=True)
 
