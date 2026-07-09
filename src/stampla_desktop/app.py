@@ -15,7 +15,7 @@ from pathlib import Path
 from stampla.config import ConfigError
 from PySide6 import QtCore, QtWidgets
 
-from stampla_desktop import history, theme, verify
+from stampla_desktop import history, rename, theme, verify
 from stampla_desktop.base import Archive, Page, load_archive
 from stampla_desktop.overview import OverviewPage
 
@@ -30,6 +30,7 @@ class ViewSpec:
 #: the sidebar, in order; Overview derives its task cards from this
 VIEWS: tuple[ViewSpec, ...] = (
     ViewSpec("Verify", verify.BLURB, verify.VerifyPage),
+    ViewSpec("Rename", rename.BLURB, rename.RenamePage),
     ViewSpec("History", history.BLURB, history.HistoryPage),
 )
 

@@ -20,3 +20,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - History view: every run against the archive with its originating
   command, timestamp and status; Undo for applied runs, Resume for
   interrupted ones.
+- Rename view: the plan as old → new with the changed span
+  highlighted, families kept whole, apply with confirm and Stop.
