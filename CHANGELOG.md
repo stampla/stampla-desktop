@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Relocate view: files whose name says they belong in another folder
+  are moved there through the journaled engine, whole groups at a
+  time — with the DAM folder checklist rendered as "Do this inside
+  Lightroom" and shoot-filed trees reported, never guessed. Requires
+  stampla >= 0.4.
+- Shoot on Import: a shoot/job field fills the {shoot} layout token
+  for trees that file by shoot; it appears only when one does, and
+  the CLI panel mirrors it as --shoot.
 - Naming pattern editor in Settings: timestamp shape, separator, digest
   algorithm and length, and image-data hashing are editable with a live
   example name that surfaces the library's own validation (sortability,
