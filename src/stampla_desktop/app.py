@@ -16,7 +16,16 @@ from pathlib import Path
 from stampla.config import ConfigError, load_config
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from stampla_desktop import history, import_view, organize, rename, settings, theme, verify
+from stampla_desktop import (
+    history,
+    import_view,
+    organize,
+    relocate,
+    rename,
+    settings,
+    theme,
+    verify,
+)
 from stampla_desktop.base import Archive, Page, load_archive
 from stampla_desktop.overview import OverviewPage
 
@@ -34,6 +43,7 @@ VIEWS: tuple[ViewSpec, ...] = (
     ViewSpec("Organize", organize.BLURB, organize.OrganizePage),
     ViewSpec("Verify", verify.BLURB, verify.VerifyPage),
     ViewSpec("Rename", rename.BLURB, rename.RenamePage),
+    ViewSpec("Relocate", relocate.BLURB, relocate.RelocatePage),
     ViewSpec("History", history.BLURB, history.HistoryPage),
     ViewSpec("Settings", settings.BLURB, settings.SettingsPage),
 )
