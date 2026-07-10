@@ -38,7 +38,7 @@ Repository = "https://github.com/stampla/stampla-desktop"
 Changelog = "https://github.com/stampla/stampla-desktop/blob/main/CHANGELOG.md"
 Issues = "https://github.com/stampla/stampla-desktop/issues"
 
-[project.scripts]
+[project.gui-scripts]
 stampla-desktop = "stampla_desktop.app:main"
 
 [project.optional-dependencies]
