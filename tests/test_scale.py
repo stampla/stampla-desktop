@@ -9,7 +9,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from stampla.journal import FamilyMove, Rename
+from stampla.journal import GroupMove, Rename
 from stampla.report import Bucket, Finding, Report
 from PySide6 import QtWidgets
 
@@ -25,7 +25,7 @@ def labels_text(page: QtWidgets.QWidget) -> str:
 
 
 def big_report(findings_per_bucket: int) -> Report:
-    report = Report(ok=180_000, scanned=200_000, families=190_000)
+    report = Report(ok=180_000, scanned=200_000, groups=190_000)
     for bucket in (Bucket.DATE_MISMATCH, Bucket.UNNAMED, Bucket.EDIT_DRIFT, Bucket.CORRUPTION):
         for index in range(findings_per_bucket):
             report.add(Finding(bucket, Path(f"Photos/2026/f{index:06d}.jpg"), "detail"))
@@ -75,7 +75,7 @@ class TestRenamePlanAtScale:
         page = page_of(window, RenamePage)
         assert isinstance(page, RenamePage)
         moves = tuple(
-            FamilyMove(
+            GroupMove(
                 key=f"k{index}",
                 renames=(
                     Rename(
@@ -94,4 +94,4 @@ class TestRenamePlanAtScale:
 
         text = labels_text(page)
         assert "10,000 rename(s)" in text
-        assert "…and 9,800 more families" in text
+        assert "…and 9,800 more groups" in text

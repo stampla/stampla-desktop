@@ -135,7 +135,7 @@ class OrganizePage(Page):
         self.add_card(
             rich_label(
                 f"<b>{len(plan.moves):,}</b> group(s) look importable out of"
-                f" <b>{report.families:,}</b> · scanned {report.scanned:,} file(s)"
+                f" <b>{report.groups:,}</b> · scanned {report.scanned:,} file(s)"
             )
         )
 
@@ -180,9 +180,10 @@ class OrganizePage(Page):
             root = self.archive.root
             for move in plan.moves[:MAX_ROWS]:
                 first = move.renames[0]
+                others = len(move.renames) - 1
                 extra = (
-                    f' <span style="color:{faint}">+{len(move.renames) - 1} family file(s)</span>'
-                    if len(move.renames) > 1
+                    f' <span style="color:{faint}">+{others} more in the group</span>'
+                    if others
                     else ""
                 )
                 layout.addWidget(

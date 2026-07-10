@@ -108,8 +108,8 @@ class VerifyPage(Page):
         self.clear_body()
         ok_color = theme.PALETTE["ok"]
         summary = rich_label(
-            f"scanned <b>{report.scanned:,}</b> files in <b>{report.families:,}</b>"
-            f' families — <span style="color:{ok_color}"><b>{report.ok:,} ok</b></span>,'
+            f"scanned <b>{report.scanned:,}</b> files in <b>{report.groups:,}</b>"
+            f' groups — <span style="color:{ok_color}"><b>{report.ok:,} ok</b></span>,'
             f" {len(report.findings):,} findings"
         )
         self.add_card(summary)

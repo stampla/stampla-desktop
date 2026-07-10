@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Groups replace families throughout, matching stampla 0.2
+  vocabulary; requires stampla >= 0.2.
+
 ### Added
 
 - Dark theme: graphite palette with a safelight-amber accent.
@@ -21,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   command, timestamp and status; Undo for applied runs, Resume for
   interrupted ones.
 - Rename view: the plan as old → new with the changed span
-  highlighted, families kept whole, apply with confirm and Stop.
+  highlighted, groups kept whole, apply with confirm and Stop.
 - Terminal transparency: a quiet >_ toggle reveals each action's
   exact CLI command with Copy, and confirmation dialogs carry the
   command under Show Details.

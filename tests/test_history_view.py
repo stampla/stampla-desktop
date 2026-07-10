@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from stampla.apply import apply_plan
-from stampla.journal import FamilyMove, Journal, Rename
+from stampla.journal import GroupMove, Journal, Rename
 from PySide6 import QtWidgets
 
 import stampla_desktop.history as history_module
@@ -30,7 +30,7 @@ def labels_text(page: HistoryPage) -> str:
 
 def make_journal(root: Path, key: str, old: str, new: str) -> Journal:
     (root / old).write_bytes(b"x")
-    move = FamilyMove(key, (Rename(old=root / old, new=root / new),))
+    move = GroupMove(key, (Rename(old=root / old, new=root / new),))
     return Journal.create(root, (move,), command="rename")
 
 
@@ -80,12 +80,12 @@ class TestHistoryView:
         (tmp_path / "a.bin").write_bytes(b"a")
         (tmp_path / "b.bin").write_bytes(b"b")
         moves = (
-            FamilyMove("a", (Rename(old=tmp_path / "a.bin", new=tmp_path / "a2.bin"),)),
-            FamilyMove("b", (Rename(old=tmp_path / "b.bin", new=tmp_path / "b2.bin"),)),
+            GroupMove("a", (Rename(old=tmp_path / "a.bin", new=tmp_path / "a2.bin"),)),
+            GroupMove("b", (Rename(old=tmp_path / "b.bin", new=tmp_path / "b2.bin"),)),
         )
         journal = Journal.create(tmp_path, moves, command="rename")
         journal.mark_done("a")
-        (tmp_path / "a.bin").rename(tmp_path / "a2.bin")  # family a applied pre-crash
+        (tmp_path / "a.bin").rename(tmp_path / "a2.bin")  # group a applied pre-crash
 
         window = MainWindow(load_archive(config))
         page = history_page(window)

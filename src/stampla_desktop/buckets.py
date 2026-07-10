@@ -29,7 +29,7 @@ TITLE = {
     Bucket.UNRESOLVED_DATE: "no capture time found",
     Bucket.COLLISION: "duplicate content",
     Bucket.AMBIGUOUS_MASTER: "master exists in several formats",
-    Bucket.ORPHAN_FAMILY: "sidecar without its master",
+    Bucket.ORPHAN_GROUP: "sidecar without its master",
     Bucket.NEEDS_SIDECAR: "needs a sidecar first",
     Bucket.OTHER_PATTERN: "named under an older pattern",
     Bucket.MTIME_DATED: "dated from file modification time",
@@ -51,14 +51,14 @@ EXPLAIN = {
         " rewrite these — restore from a backup and compare."
     ),
     Bucket.APPLY_FAILED: (
-        "Nothing was half-done: families apply all-or-nothing. See the"
+        "Nothing was half-done: groups apply all-or-nothing. See the"
         " detail, then retry or undo from History."
     ),
     Bucket.HASH_ERROR: "The file could not be read to compute its fingerprint.",
     Bucket.METADATA_UNREADABLE: "ExifTool could not read this file's metadata.",
     Bucket.DATE_MISMATCH: (
         "Usually a date you corrected after import. Fixing renames the"
-        " whole family together — see Fix Names."
+        " whole group together — see Fix Names."
     ),
     Bucket.UNRESOLVED_DATE: (
         "No usable date field, so the file is reported and never renamed."
@@ -66,7 +66,7 @@ EXPLAIN = {
     ),
     Bucket.COLLISION: "Two files resolve to the same name — the content is identical.",
     Bucket.AMBIGUOUS_MASTER: "The same photo exists as more than one master format.",
-    Bucket.ORPHAN_FAMILY: "A sidecar whose master file is missing.",
+    Bucket.ORPHAN_GROUP: "A sidecar whose master file is missing.",
     Bucket.NEEDS_SIDECAR: (
         "A DAM-managed RAW has no XMP sidecar to carry the rename token."
         " Save metadata from the DAM first, then retry."

@@ -80,7 +80,7 @@ class HistoryPage(Page):
             column.addWidget(
                 rich_label(
                     f"<b>{html.escape(origin)}</b>"
-                    f" · {summary.families} family(ies)"
+                    f" · {summary.groups} group(s)"
                     f' · <span style="color:{color}"><b>{summary.status}</b></span>'
                     f' <span style="color:{theme.PALETTE["faint"]}">({meaning})</span>'
                 )
@@ -152,7 +152,7 @@ class HistoryPage(Page):
         self.busy = False
         assert isinstance(result, ApplyResult)
         self.status(
-            f"Undo: {len(result.applied)} family(ies) reverted,"
+            f"Undo: {len(result.applied)} group(s) reverted,"
             f" {len(result.skipped)} not applied, {len(result.failed)} failed."
         )
         self.refresh()
@@ -161,7 +161,7 @@ class HistoryPage(Page):
         self.busy = False
         assert isinstance(result, ApplyResult)
         self.status(
-            f"Resume: {len(result.applied)} family(ies) applied,"
+            f"Resume: {len(result.applied)} group(s) applied,"
             f" {len(result.skipped)} already done, {len(result.failed)} failed."
         )
         self.refresh()

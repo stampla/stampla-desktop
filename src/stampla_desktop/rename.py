@@ -1,7 +1,7 @@
 """The Rename view: the rename command, rendered — with the DAM hand-off.
 
 Names are deterministic, so there is nothing to configure — only a
-plan to review. The table shows whole families (sidecars nested under
+plan to review. The table shows whole groups (sidecars nested under
 their master) with the changed span of each new name highlighted, and
 Apply runs the same validated, journaled engine as the CLI.
 
@@ -18,7 +18,7 @@ import html
 from typing import TYPE_CHECKING
 
 from stampla.dam import InjectOptions, run_inject
-from stampla.journal import FamilyMove
+from stampla.journal import GroupMove
 from stampla.progress import Monitor
 from stampla.renamer import RenameOptions, run_rename
 from stampla.report import Bucket, Report
@@ -52,7 +52,7 @@ class RenamePage(Page):
         )
         self.busy = False
         self._applying = False
-        self.moves: tuple[FamilyMove, ...] = ()
+        self.moves: tuple[GroupMove, ...] = ()
         self.pending_tokens = 0
 
         self.preview_button = QtWidgets.QPushButton("Preview")
@@ -102,7 +102,7 @@ class RenamePage(Page):
         archive = self.archive
         with_dam = self.dam_configured
 
-        def run(monitor: Monitor) -> tuple[Report, tuple[FamilyMove, ...], Report | None]:
+        def run(monitor: Monitor) -> tuple[Report, tuple[GroupMove, ...], Report | None]:
             report, moves = run_rename(archive.config, archive.root, (), options, monitor)
             inject_report: Report | None = None
             if with_dam and not apply:
@@ -126,7 +126,7 @@ class RenamePage(Page):
         if confirm(
             self,
             "Apply renames",
-            f"Rename {total} file(s) in {len(self.moves)} family(ies)?",
+            f"Rename {total} file(s) in {len(self.moves)} group(s)?",
             "The plan is journaled first and can be undone from History.",
             command=cli("rename", "--config", self.archive.config_path, "--apply"),
         ):
@@ -144,7 +144,7 @@ class RenamePage(Page):
         if applied:
             failed = sum(1 for f in report.findings if f.bucket.value == "apply-failed")
             self.status(
-                f"Applied {len(moves)} family(ies)"
+                f"Applied {len(moves)} group(s)"
                 + (f", {failed} failed" if failed else "")
                 + " — revertable from History."
             )
@@ -270,22 +270,20 @@ class RenamePage(Page):
         self.work_finished()
         if self._applying:
             self.status(
-                "Stopped mid-apply — completed families are journaled; finish or"
+                "Stopped mid-apply — completed groups are journaled; finish or"
                 " revert them from History."
             )
             self.window_.refresh_history()
         else:
             self.status("Stopped — a preview changes nothing.")
 
-    def render_plan(self, moves: tuple[FamilyMove, ...]) -> None:
+    def render_plan(self, moves: tuple[GroupMove, ...]) -> None:
         self.clear_body()
         total = sum(len(move.renames) for move in moves)
         if not moves:
             self.add_card(rich_label("Every name matches — nothing to rename."))
             return
-        self.add_card(
-            rich_label(f"<b>{total:,} rename(s)</b> planned in {len(moves):,} family(ies):")
-        )
+        self.add_card(rich_label(f"<b>{total:,} rename(s)</b> planned in {len(moves):,} group(s):"))
         frame, layout = card()
         muted, faint = theme.PALETTE["muted"], theme.PALETTE["faint"]
         root = self.archive.root
@@ -301,7 +299,7 @@ class RenamePage(Page):
                     )
                 )
         if len(moves) > 200:
-            more = QtWidgets.QLabel(f"…and {len(moves) - 200:,} more families")
+            more = QtWidgets.QLabel(f"…and {len(moves) - 200:,} more groups")
             more.setObjectName("faint")
             layout.addWidget(more)
         self.add_card(frame)

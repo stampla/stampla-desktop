@@ -246,9 +246,10 @@ class ImportPage(Page):
             shown = 0
             for move in plan.moves[:MAX_GROUP_ROWS]:
                 first = move.renames[0]
+                others = len(move.renames) - 1
                 extra = (
-                    f' <span style="color:{faint}">+{len(move.renames) - 1} family file(s)</span>'
-                    if len(move.renames) > 1
+                    f' <span style="color:{faint}">+{others} more in the group</span>'
+                    if others
                     else ""
                 )
                 layout.addWidget(
