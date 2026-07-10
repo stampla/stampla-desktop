@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Naming pattern editor in Settings: timestamp shape, separator, digest
+  algorithm and length, and image-data hashing are editable with a live
+  example name that surfaces the library's own validation (sortability,
+  filename safety, the DAM token cap). Saving a changed pattern requires
+  a new pattern name, keeps the old scheme recognized under additional
+  patterns, and explains the migration before writing anything; nothing
+  is renamed by saving. Requires stampla >= 0.3.
+
+### Fixed
+
+- The Trees help no longer advertises the {shoot} layout token, which
+  is not part of the released library.
+
 ## [0.1.0] - 2026-07-10
 
 ### Fixed

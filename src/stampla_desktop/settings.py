@@ -3,22 +3,26 @@
 The TOML file stays the single source of truth — this view edits it in
 place, preserving comments and layout (tomlkit), and nothing reaches
 the disk without passing the library's own ``load_config`` first: a
-broken configuration can never be written. The naming pattern is shown
-but not editable here — changing what names *mean* renames every file
-in the archive (a migration), which deserves the config file, the
-documentation, and both eyes open.
+broken configuration can never be written. Editing the naming pattern
+changes what every name *means*, so saving one starts a migration: the
+old pattern is kept as recognized, and files named under it are
+reported as pending until renamed.
 """
 
 from __future__ import annotations
 
+import hashlib
+import html
 import os
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 import tomlkit
 from stampla.config import ConfigError, load_config
+from stampla.pattern import MAX_PREFIX_LENGTH, NamingPattern, PatternError
 from PySide6 import QtWidgets
 
 from stampla_desktop import theme
@@ -30,6 +34,14 @@ if TYPE_CHECKING:
 BLURB = "Edit the archive configuration — validated before every save, comments preserved."
 
 MEDIA_KINDS = ("photo", "video")
+
+#: algorithms that also support image-data hashing (ExifTool ImageDataHash)
+DIGESTS = ("md5", "sha256", "sha512")
+
+#: a stable, obviously-fake digest for the example name in the preview
+SAMPLE_DIGEST = hashlib.sha512(b"stampla").hexdigest()
+
+SAMPLE_CAPTURE = datetime(2026, 6, 10, 16, 10, 45)
 
 
 class TreeRow:
@@ -66,6 +78,7 @@ class SettingsPage(Page):
             " comments. Nothing is saved unless the whole configuration is valid."
         )
         self._mtime: float | None = None
+        self._loaded_pattern: NamingPattern | None = None
         self.tree_rows: list[TreeRow] = []
 
         self.save_button = QtWidgets.QPushButton("Save")
@@ -119,7 +132,7 @@ class SettingsPage(Page):
             rich_label(
                 "<b>Trees</b>&nbsp;&nbsp;"
                 f'<span style="color:{theme.PALETTE["muted"]}">Subfolders of the archive,'
-                " one per media kind. Layout tokens: {yyyy} {mm} {dd} {shoot}.</span>"
+                " one per media kind. Layout tokens: {yyyy} {mm} {dd}.</span>"
             )
         )
         self.trees_host = QtWidgets.QVBoxLayout()
@@ -161,20 +174,73 @@ class SettingsPage(Page):
         layout.addWidget(
             rich_label(
                 "<b>Naming pattern</b>&nbsp;&nbsp;"
-                f'<span style="color:{theme.PALETTE["warn"]}">shown, not editable here</span>'
+                f'<span style="color:{theme.PALETTE["muted"]}">How every file in the'
+                " archive is named.</span>"
             )
         )
-        self.pattern_label = rich_label("")
-        layout.addWidget(self.pattern_label)
+        form = QtWidgets.QFormLayout()
+        self.pattern_name_edit = QtWidgets.QLineEdit()
+        self.pattern_name_edit.setPlaceholderText("e.g. sha256-12")
+        form.addRow("Name", self.pattern_name_edit)
+        self.pattern_format_edit = QtWidgets.QLineEdit()
+        self.pattern_format_edit.setPlaceholderText("%Y%m%d_%H%M%S")
+        form.addRow("Timestamp", self.pattern_format_edit)
+        format_note = QtWidgets.QLabel(
+            "Must use each of %Y %m %d %H %M %S once, in that order — that is what"
+            " keeps names sorting by capture time. Separating characters are yours"
+            " to choose, as long as they are safe in filenames."
+        )
+        format_note.setObjectName("faint")
+        format_note.setWordWrap(True)
+        form.addRow("", format_note)
+        self.pattern_separator_edit = QtWidgets.QLineEdit()
+        self.pattern_separator_edit.setMaximumWidth(80)
+        form.addRow("Separator", self.pattern_separator_edit)
+        digest_row = QtWidgets.QHBoxLayout()
+        self.pattern_digest_combo = QtWidgets.QComboBox()
+        self.pattern_digest_combo.addItems(DIGESTS)
+        self.pattern_length_spin = QtWidgets.QSpinBox()
+        self.pattern_length_spin.setRange(4, 32)
+        digest_row.addWidget(self.pattern_digest_combo, 0)
+        digest_row.addWidget(QtWidgets.QLabel("first"), 0)
+        digest_row.addWidget(self.pattern_length_spin, 0)
+        digest_row.addWidget(QtWidgets.QLabel("characters"), 0)
+        digest_row.addStretch(1)
+        form.addRow("Fingerprint", digest_row)
+        self.pattern_image_hash_edit = QtWidgets.QLineEdit()
+        self.pattern_image_hash_edit.setPlaceholderText(
+            "comma-separated extensions, e.g. jpg, dng, tif"
+        )
+        form.addRow("Image-data hash", self.pattern_image_hash_edit)
+        image_hash_note = QtWidgets.QLabel(
+            "Formats your DAM edits in place: hash only the image data, so names"
+            " survive keyword and rating writes."
+        )
+        image_hash_note.setObjectName("faint")
+        image_hash_note.setWordWrap(True)
+        form.addRow("", image_hash_note)
+        self.pattern_preview = rich_label("")
+        form.addRow("Example", self.pattern_preview)
+        layout.addLayout(form)
         pattern_note = QtWidgets.QLabel(
-            "Changing the pattern changes what every name means — a migration that"
-            " renames the whole archive. If that is really what you want, edit the"
-            " config file by hand with the design document open."
+            "Changing the pattern changes what every name means. Saving a change"
+            " starts a migration: the old pattern stays recognized, files named"
+            " under it are reported as pending, and Rename migrates them."
         )
         pattern_note.setObjectName("faint")
         pattern_note.setWordWrap(True)
         layout.addWidget(pattern_note)
         self.add_card(frame)
+
+        self.pattern_digest_combo.currentTextChanged.connect(self._digest_changed)
+        for signal in (
+            self.pattern_name_edit.textChanged,
+            self.pattern_format_edit.textChanged,
+            self.pattern_separator_edit.textChanged,
+            self.pattern_image_hash_edit.textChanged,
+        ):
+            signal.connect(self.update_pattern_preview)
+        self.pattern_length_spin.valueChanged.connect(self.update_pattern_preview)
 
     def add_tree_row(self, path: str, media: str, layout_value: str) -> None:
         row = TreeRow(self, path, media, layout_value)
@@ -191,6 +257,47 @@ class SettingsPage(Page):
         chosen = QtWidgets.QFileDialog.getExistingDirectory(self, "Choose the archive folder")
         if chosen:
             self.root_edit.setText(chosen)
+
+    # --- pattern editor -------------------------------------------------
+
+    def _digest_changed(self, digest: str) -> None:
+        hex_length = hashlib.new(digest).digest_size * 2
+        self.pattern_length_spin.setMaximum(hex_length)
+        self.update_pattern_preview()
+
+    def pattern_from_form(self) -> NamingPattern:
+        """The pattern the form describes; raises PatternError when invalid."""
+        extensions = [
+            ext.strip().lstrip(".").lower()
+            for ext in self.pattern_image_hash_edit.text().split(",")
+        ]
+        return NamingPattern(
+            name=self.pattern_name_edit.text().strip(),
+            datetime_format=self.pattern_format_edit.text(),
+            digest=self.pattern_digest_combo.currentText(),
+            digest_length=self.pattern_length_spin.value(),
+            separator=self.pattern_separator_edit.text(),
+            image_hash=frozenset(ext for ext in extensions if ext),
+        )
+
+    def update_pattern_preview(self) -> None:
+        try:
+            pattern = self.pattern_from_form()
+        except (PatternError, ValueError) as error:
+            self.pattern_preview.setText(
+                f'<span style="color:{theme.PALETTE["crit"]}">{html.escape(str(error))}</span>'
+            )
+            return
+        example = pattern.build_prefix(SAMPLE_CAPTURE, SAMPLE_DIGEST) + ".nef"
+        note = ""
+        if self.dam_trees_edit.text().strip() and pattern.prefix_length > MAX_PREFIX_LENGTH:
+            note = (
+                f'&nbsp;&nbsp;<span style="color:{theme.PALETTE["crit"]}">'
+                f"{pattern.prefix_length} characters — too long for the DAM rename"
+                f" token, which must fit 32; at most {MAX_PREFIX_LENGTH} while"
+                " DAM-managed trees are configured</span>"
+            )
+        self.pattern_preview.setText(f'<span style="{MONO}">{html.escape(example)}</span>{note}')
 
     def open_in_editor(self) -> None:
         from PySide6 import QtCore, QtGui
@@ -220,10 +327,15 @@ class SettingsPage(Page):
         self.twins_check.setChecked(config.skip_jpeg_twins)
         self.dam_trees_edit.setText(", ".join(config.dam.trees) if config.dam else "")
         pattern = config.pattern
-        self.pattern_label.setText(
-            f'<span style="{MONO}">{pattern.name}: {pattern.datetime_format}'
-            f" + {pattern.digest}:{pattern.digest_length}</span>"
-        )
+        self._loaded_pattern = pattern
+        self.pattern_name_edit.setText(pattern.name)
+        self.pattern_format_edit.setText(pattern.datetime_format)
+        self.pattern_separator_edit.setText(pattern.separator)
+        self.pattern_digest_combo.setCurrentText(pattern.digest)
+        self._digest_changed(pattern.digest)
+        self.pattern_length_spin.setValue(pattern.digest_length)
+        self.pattern_image_hash_edit.setText(", ".join(sorted(pattern.image_hash)))
+        self.update_pattern_preview()
         self.status("Settings loaded from the file.")
 
     def check_external_edit(self) -> None:
@@ -276,6 +388,30 @@ class SettingsPage(Page):
         elif "dam" in document:
             del document["dam"]
 
+        try:
+            new_pattern = self.pattern_from_form()
+        except (PatternError, ValueError) as error:
+            self.show_error(f"Not saved — the naming pattern is invalid: {error}")
+            return
+        old_pattern = self._loaded_pattern
+        if old_pattern is not None and new_pattern != old_pattern:
+            if new_pattern.name == old_pattern.name:
+                self.show_error(
+                    "Not saved — a changed pattern needs a new name; the old one"
+                    f" keeps {old_pattern.name!r} while the migration runs."
+                )
+                return
+            if not self.confirm_migration(old_pattern, new_pattern):
+                return
+            pattern_table = document.setdefault("pattern", tomlkit.table())
+            _write_pattern(pattern_table, new_pattern)
+            additional = pattern_table.setdefault("additional", tomlkit.aot())
+            if all(entry.get("name") != old_pattern.name for entry in additional):
+                # the old scheme stays recognized until the migration finishes
+                entry = tomlkit.table()
+                _write_pattern(entry, old_pattern)
+                additional.append(entry)
+
         rendered = tomlkit.dumps(document)
         if timezone:
             try:
@@ -304,6 +440,18 @@ class SettingsPage(Page):
         self.window_.reload_archive()
         self.status("Settings saved and validated — all views now use the new configuration.")
 
+    def confirm_migration(self, old: NamingPattern, new: NamingPattern) -> bool:
+        answer = QtWidgets.QMessageBox.question(
+            self,
+            "Change the naming pattern?",
+            f"Every file is currently named by {old.name!r}; the archive would"
+            f" switch to {new.name!r}.\n\nSaving starts a migration, it renames"
+            " nothing by itself: the old pattern stays recognized, Verify reports"
+            " files named under it as pending migration, and Rename brings them"
+            " to the new scheme when you choose to.",
+        )
+        return answer == QtWidgets.QMessageBox.StandardButton.Yes
+
     def show_error(self, message: str | None) -> None:
         if message is None:
             self.error_label.setVisible(False)
@@ -312,6 +460,16 @@ class SettingsPage(Page):
             f'<span style="color:{theme.PALETTE["crit"]}"><b>{message}</b></span>'
         )
         self.error_label.setVisible(True)
+
+
+def _write_pattern(table: tomlkit.items.Table, pattern: NamingPattern) -> None:
+    """Write every pattern field explicitly — a migration is no place for defaults."""
+    table["name"] = pattern.name
+    table["datetime_format"] = pattern.datetime_format
+    table["digest"] = pattern.digest
+    table["digest_length"] = pattern.digest_length
+    table["separator"] = pattern.separator
+    table["image_hash"] = sorted(pattern.image_hash)
 
 
 def _timezone_of(config: object) -> str:

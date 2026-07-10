@@ -100,3 +100,94 @@ def test_save_reloads_the_archive_everywhere(qapp: QtWidgets.QApplication, tmp_p
     page.save()
 
     assert window.archive.config.trees[0].layout == "{yyyy}/{mm}"
+
+
+class TestPatternEditor:
+    def test_form_loads_the_pattern(self, qapp: QtWidgets.QApplication, tmp_path: Path) -> None:
+        window = MainWindow(load_archive(write_config(tmp_path)))
+        page = settings_page(window)
+        assert page.pattern_name_edit.text() == "md5-8"
+        assert page.pattern_format_edit.text() == "%Y%m%d_%H%M%S"
+        assert page.pattern_digest_combo.currentText() == "md5"
+        assert page.pattern_length_spin.value() == 8
+        assert "20260610_161045_" in page.pattern_preview.text()
+
+    def test_preview_surfaces_library_validation(
+        self, qapp: QtWidgets.QApplication, tmp_path: Path
+    ) -> None:
+        window = MainWindow(load_archive(write_config(tmp_path)))
+        page = settings_page(window)
+        page.pattern_format_edit.setText("%d%m%Y_%H%M%S")  # day first: unsortable
+        assert "sorting" in page.pattern_preview.text()
+        page.pattern_format_edit.setText("%Y-%m-%d %H:%M:%S")  # colons: unsafe
+        assert "not safe in filenames" in page.pattern_preview.text()
+
+    def test_pattern_change_keeps_the_old_scheme_recognized(
+        self,
+        qapp: QtWidgets.QApplication,
+        tmp_path: Path,
+        monkeypatch: object,
+    ) -> None:
+        import pytest
+
+        assert isinstance(monkeypatch, pytest.MonkeyPatch)
+        monkeypatch.setattr(
+            QtWidgets.QMessageBox,
+            "question",
+            staticmethod(lambda *a, **k: QtWidgets.QMessageBox.StandardButton.Yes),
+        )
+        config = write_config(tmp_path)
+        window = MainWindow(load_archive(config))
+        page = settings_page(window)
+        page.pattern_name_edit.setText("sha256-22")
+        page.pattern_digest_combo.setCurrentText("sha256")
+        page.pattern_length_spin.setValue(22)
+        page.save()
+
+        assert not page.error_label.isVisible()
+        saved = window.archive.config
+        assert saved.pattern.name == "sha256-22"
+        assert saved.pattern.digest_length == 22
+        assert [p.name for p in saved.additional_patterns] == ["md5-8"]
+
+    def test_changed_pattern_requires_a_new_name(
+        self, qapp: QtWidgets.QApplication, tmp_path: Path
+    ) -> None:
+        config = write_config(tmp_path)
+        before = config.read_text()
+        window = MainWindow(load_archive(config))
+        page = shown_settings_page(window)
+        page.pattern_length_spin.setValue(12)  # changed, but still named md5-8
+        page.save()
+
+        assert config.read_text() == before
+        assert page.error_label.isVisible()
+        assert "new name" in page.error_label.text()
+
+    def test_dam_rejects_long_prefixes_on_save(
+        self,
+        qapp: QtWidgets.QApplication,
+        tmp_path: Path,
+        monkeypatch: object,
+    ) -> None:
+        import pytest
+
+        assert isinstance(monkeypatch, pytest.MonkeyPatch)
+        monkeypatch.setattr(
+            QtWidgets.QMessageBox,
+            "question",
+            staticmethod(lambda *a, **k: QtWidgets.QMessageBox.StandardButton.Yes),
+        )
+        config = write_config(tmp_path)
+        before = config.read_text()
+        window = MainWindow(load_archive(config))
+        page = shown_settings_page(window)
+        page.dam_trees_edit.setText("Photos")
+        page.pattern_name_edit.setText("sha256-22")
+        page.pattern_digest_combo.setCurrentText("sha256")
+        page.pattern_length_spin.setValue(22)
+        page.save()
+
+        assert config.read_text() == before
+        assert page.error_label.isVisible()
+        assert "TransmissionReference" in page.error_label.text()
