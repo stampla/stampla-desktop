@@ -14,6 +14,7 @@ dynamic = ["version"]
 dependencies = [
     "PySide6>=6.7",
     "stampla>=0.2",
+    "tomlkit>=0.12",
 ]
 keywords = ["photography", "video", "exif", "rename", "archive", "gui", "qt"]
 classifiers = [

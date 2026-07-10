@@ -43,3 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   everywhere, accurate post-apply import summaries (failed groups are
   never reported as copied), History capped and guarded against
   double-clicks.
+- Settings view: edit the archive configuration with validation before
+  every save and hand-written comments preserved; the naming pattern is
+  shown read-only. First-run flow can create a new archive config.

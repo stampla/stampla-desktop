@@ -5,10 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from stampla.config import ConfigError
+from stampla.config import ConfigError, load_config
 from PySide6 import QtWidgets
 
-from stampla_desktop.app import VIEWS, MainWindow
+from stampla_desktop.app import VIEWS, MainWindow, create_archive_config
 from stampla_desktop.base import load_archive
 from tests.support import write_config
 
@@ -42,3 +42,43 @@ class TestMainWindow:
         window = MainWindow(load_archive(write_config(tmp_path)))
         window.go(0)
         assert window.stack.currentIndex() == 0
+
+
+class TestCreateArchiveConfig:
+    def test_create_archive_config_writes_a_loadable_default(
+        self,
+        qapp: QtWidgets.QApplication,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(
+            QtWidgets.QFileDialog, "getExistingDirectory", lambda *a, **k: str(tmp_path)
+        )
+        path = create_archive_config()
+        assert path is not None
+        assert path.exists()
+        load_config(path)  # loads without raising
+        text = path.read_text()
+        assert "Photos" in text
+        assert "#" in text
+
+    def test_create_archive_config_refuses_to_overwrite(
+        self,
+        qapp: QtWidgets.QApplication,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(
+            QtWidgets.QFileDialog, "getExistingDirectory", lambda *a, **k: str(tmp_path)
+        )
+        warnings: list[str] = []
+        monkeypatch.setattr(
+            QtWidgets.QMessageBox,
+            "warning",
+            lambda *a, **k: warnings.append(a[2] if len(a) > 2 else ""),
+        )
+
+        first = create_archive_config()
+        assert first is not None
+        assert create_archive_config() is None
+        assert warnings

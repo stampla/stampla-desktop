@@ -12,10 +12,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from stampla.config import ConfigError
+from stampla.config import ConfigError, load_config
 from PySide6 import QtCore, QtWidgets
 
-from stampla_desktop import history, import_view, organize, rename, theme, verify
+from stampla_desktop import history, import_view, organize, rename, settings, theme, verify
 from stampla_desktop.base import Archive, Page, load_archive
 from stampla_desktop.overview import OverviewPage
 
@@ -34,6 +34,7 @@ VIEWS: tuple[ViewSpec, ...] = (
     ViewSpec("Verify", verify.BLURB, verify.VerifyPage),
     ViewSpec("Rename", rename.BLURB, rename.RenamePage),
     ViewSpec("History", history.BLURB, history.HistoryPage),
+    ViewSpec("Settings", settings.BLURB, settings.SettingsPage),
 )
 
 
@@ -86,6 +87,24 @@ class MainWindow(QtWidgets.QMainWindow):
             if isinstance(widget, history.HistoryPage):
                 widget.refresh()
 
+    def reload_archive(self) -> None:
+        """Settings saved: every view sees the new configuration at once."""
+        fresh = settings.reload_archive(self)
+        if fresh is None:
+            self.statusBar().showMessage(
+                "The saved configuration no longer loads — check Settings."
+            )
+            return
+        self.archive = fresh
+        self.setWindowTitle(f"Stampla — {fresh.root.name}")
+        self.statusBar().showMessage(f"Archive: {fresh.root}")
+        for index in range(self.stack.count()):
+            widget = self.stack.widget(index)
+            if isinstance(widget, OverviewPage):
+                widget.refresh()
+        for page in self._cli_pages:
+            page.cli_panel.refresh()
+
     def register_cli(self, page: Page) -> None:
         self._cli_pages.append(page)
 
@@ -99,16 +118,103 @@ class MainWindow(QtWidgets.QMainWindow):
         self.settings.setValue("show_cli", visible)
 
 
+#: written verbatim into a new archive's config; the ``{root}`` placeholder
+#: is the only field filled in. Layout tokens are literal braces, so this is
+#: a plain string (no ``str.format``) to keep every ``{ }`` correct TOML.
+DEFAULT_CONFIG_TEMPLATE = """\
+# Stampla archive configuration.
+#
+# This plain TOML file is the single source of truth for your archive.
+# The Settings view reads and writes this same file, keeping your comments —
+# you can also edit it here by hand.
+
+root = "{root}"
+
+# Trees are the subfolders of the archive, one per media kind.
+# Layout tokens are literal braces: {yyyy} {mm} {dd} {shoot}.
+[[trees]]
+path = "Photos"
+media = "photo"
+layout = "{yyyy}/{yyyy}-{mm}"
+
+[[trees]]
+path = "Video"
+media = "video"
+layout = "{yyyy}/{yyyy}-{mm}"
+
+# Import options (uncomment to use):
+# [import]
+# ignore = ["NIKON001.DSC"]      # globs skipped when reading a card
+# skip_jpeg_twins = true         # skip a JPEG when its RAW twin is present
+
+# Timezone used only for UTC-only timestamps (typically phone video):
+# [dates]
+# timezone = "Europe/Warsaw"
+"""
+
+
+def open_existing_config() -> Path | None:
+    chosen, _ = QtWidgets.QFileDialog.getOpenFileName(
+        None, "Open archive configuration", "", "Archive config (*.toml)"
+    )
+    return Path(chosen) if chosen else None
+
+
+def create_archive_config() -> Path | None:
+    """Set up a fresh archive: a folder and a validated default config in it."""
+    chosen = QtWidgets.QFileDialog.getExistingDirectory(
+        None, "Choose the folder that holds (or will hold) your archive"
+    )
+    if not chosen:
+        return None
+    folder = Path(chosen)
+    config_path = folder / "stampla.toml"
+    if config_path.exists():
+        QtWidgets.QMessageBox.warning(
+            None,
+            "Stampla",
+            f"{config_path} already exists — open it instead of creating a new one.",
+        )
+        return None
+
+    config_path.write_text(DEFAULT_CONFIG_TEMPLATE.replace("{root}", str(folder)), encoding="utf-8")
+    try:
+        load_config(config_path)
+    except (ConfigError, OSError, ValueError) as error:
+        config_path.unlink(missing_ok=True)
+        QtWidgets.QMessageBox.warning(
+            None, "Stampla", f"Could not create a valid configuration: {error}"
+        )
+        return None
+    return config_path
+
+
+def first_run_dialog() -> Path | None:
+    """Offer to open an existing archive or create a new one."""
+    box = QtWidgets.QMessageBox()
+    box.setWindowTitle("Stampla")
+    box.setText("Open an existing archive configuration, or set up a new archive.")
+    open_button = box.addButton("Open configuration…", QtWidgets.QMessageBox.ButtonRole.AcceptRole)
+    create_button = box.addButton(
+        "Create new archive…", QtWidgets.QMessageBox.ButtonRole.ActionRole
+    )
+    box.addButton("Cancel", QtWidgets.QMessageBox.ButtonRole.RejectRole)
+    box.exec()
+    clicked = box.clickedButton()
+    if clicked is open_button:
+        return open_existing_config()
+    if clicked is create_button:
+        return create_archive_config()
+    return None
+
+
 def pick_config(settings: QtCore.QSettings) -> Path | None:
     if len(sys.argv) > 1:
         return Path(sys.argv[1])
     last = str(settings.value("config", ""))
     if last and Path(last).is_file():
         return Path(last)
-    chosen, _ = QtWidgets.QFileDialog.getOpenFileName(
-        None, "Open archive configuration", "", "Archive config (*.toml)"
-    )
-    return Path(chosen) if chosen else None
+    return first_run_dialog()
 
 
 def main() -> int:

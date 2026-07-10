@@ -17,6 +17,13 @@ if TYPE_CHECKING:
 class OverviewPage(Page):
     def __init__(self, window: MainWindow, tasks: list[tuple[str, str, int]]) -> None:
         super().__init__("Overview", window)
+        self.tasks = tasks
+        self.refresh()
+
+    def refresh(self) -> None:
+        """Rebuilt whenever the archive configuration changes."""
+        self.clear_body()
+        tasks = self.tasks
         archive = self.archive
         self.subtitle.setText(str(archive.root))
 
