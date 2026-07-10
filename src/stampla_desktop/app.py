@@ -7,6 +7,7 @@ engine as the CLI. Views are named after the commands they wrap.
 
 from __future__ import annotations
 
+import shutil
 import signal
 import sys
 from collections.abc import Callable
@@ -237,6 +238,22 @@ def first_run_dialog() -> Path | None:
     return None
 
 
+def exiftool_warning() -> str | None:
+    """A user-facing explanation when ExifTool is absent, or None."""
+    if shutil.which("exiftool"):
+        return None
+    hint = (
+        "brew install exiftool"
+        if sys.platform == "darwin"
+        else "see https://exiftool.org/install.html"
+    )
+    return (
+        "ExifTool is not installed, and reading capture times needs it —"
+        " Import, Organize, Verify and Rename will fail until it is.\n\n"
+        f"Install it ({hint}), then start Stampla again."
+    )
+
+
 def pick_config(settings: QtCore.QSettings) -> Path | None:
     if len(sys.argv) > 1:
         return Path(sys.argv[1])
@@ -275,4 +292,7 @@ def main() -> int:
     window = MainWindow(archive)
     window.resize(1100, 720)
     window.show()
+    warning = exiftool_warning()
+    if warning is not None:
+        QtWidgets.QMessageBox.warning(window, "Stampla", warning)
     return app.exec()

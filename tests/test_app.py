@@ -82,3 +82,20 @@ class TestCreateArchiveConfig:
         assert first is not None
         assert create_archive_config() is None
         assert warnings
+
+
+def test_exiftool_warning_when_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    from stampla_desktop import app as app_module
+
+    monkeypatch.setattr(app_module.shutil, "which", lambda _: None)
+    warning = app_module.exiftool_warning()
+    assert warning is not None
+    assert "ExifTool" in warning
+    assert "Import" in warning  # says what will break, not just what's missing
+
+
+def test_no_warning_when_exiftool_present(monkeypatch: pytest.MonkeyPatch) -> None:
+    from stampla_desktop import app as app_module
+
+    monkeypatch.setattr(app_module.shutil, "which", lambda _: "/opt/homebrew/bin/exiftool")
+    assert app_module.exiftool_warning() is None
