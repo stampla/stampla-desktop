@@ -194,8 +194,8 @@ class RelocatePage(Page):
                 new_dir = relative(root / target_dir, root) if target_dir else ""
                 layout.addWidget(
                     rich_label(
-                        f'<span style="{MONO}">'
-                        f'<span style="color:{muted}">{html.escape(old_dir)}</span>'
+                        f'<span style="{MONO}">{html.escape(finding.path.name)}'
+                        f'&nbsp;&nbsp;<span style="color:{muted}">{html.escape(old_dir)}</span>'
                         f'&nbsp;<span style="color:{faint}">→</span>&nbsp;'
                         f'<span style="color:{amber}">{html.escape(new_dir)}</span></span>'
                     )
