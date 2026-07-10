@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from stampla.config import ConfigError, load_config
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from stampla_desktop import history, import_view, organize, rename, settings, theme, verify
 from stampla_desktop.base import Archive, Page, load_archive
@@ -238,6 +238,7 @@ def pick_config(settings: QtCore.QSettings) -> Path | None:
 def main() -> int:
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("Stampla")
+    app.setWindowIcon(QtGui.QIcon(str(Path(__file__).parent / "resources" / "icon.png")))
     app.setStyle("Fusion")
     app.setStyleSheet(theme.QSS)
 
