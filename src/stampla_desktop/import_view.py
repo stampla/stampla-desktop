@@ -66,9 +66,21 @@ class ImportPage(Page):
         self.apply_button.setEnabled(False)
         self.preview_button.clicked.connect(lambda: self.start(apply=False))
         self.apply_button.clicked.connect(self.confirm_apply)
+        self.shoot_edit = QtWidgets.QLineEdit()
+        self.shoot_edit.setPlaceholderText("shoot / job name")
+        self.shoot_edit.setToolTip(
+            "Fills the {shoot} folder token for trees that file by shoot;"
+            " whitespace becomes underscores."
+        )
+        self.shoot_edit.setMaximumWidth(180)
+        self.shoot_edit.setVisible(
+            any("{shoot}" in tree.layout for tree in self.archive.config.trees)
+        )
+        self.shoot_edit.textChanged.connect(lambda _: self.cli_panel.refresh())
         self.toolbar.addWidget(browse_button)
         self.toolbar.addWidget(self.preview_button)
         self.toolbar.addWidget(self.apply_button)
+        self.toolbar.addWidget(self.shoot_edit)
         self.toolbar.addWidget(self.source_label, 1)
         self.add_work_controls()
         self.add_cli(self.cli_commands)
@@ -82,6 +94,8 @@ class ImportPage(Page):
     def cli_commands(self) -> list[tuple[str, str]]:
         source = self.source if self.source is not None else Path("/Volumes/CARD")
         base = ["import", source, "--config", self.archive.config_path]
+        if self.shoot_edit.text().strip():
+            base += ["--shoot", self.shoot_edit.text().strip()]
         return [
             ("Preview", cli(*base)),
             ("Import", cli(*base, "--apply")),
@@ -130,9 +144,10 @@ class ImportPage(Page):
         self.status("Importing…" if apply else "Planning the import…")
         archive = self.archive
         source = self.source
+        shoot = self.shoot_edit.text().strip() or None
 
         def run(monitor: Monitor) -> tuple[ImportPlan, Report]:
-            plan = build_plan(archive.config, archive.root, source, monitor=monitor)
+            plan = build_plan(archive.config, archive.root, source, monitor=monitor, shoot=shoot)
             report = apply_import(plan, archive.root, monitor=monitor) if apply else plan.report
             return plan, report
 

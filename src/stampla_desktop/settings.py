@@ -132,7 +132,7 @@ class SettingsPage(Page):
             rich_label(
                 "<b>Trees</b>&nbsp;&nbsp;"
                 f'<span style="color:{theme.PALETTE["muted"]}">Subfolders of the archive,'
-                " one per media kind. Layout tokens: {yyyy} {mm} {dd}.</span>"
+                " one per media kind. Layout tokens: {yyyy} {mm} {dd} {shoot}.</span>"
             )
         )
         self.trees_host = QtWidgets.QVBoxLayout()
