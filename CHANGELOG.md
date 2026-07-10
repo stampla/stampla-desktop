@@ -17,9 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Groups replace families throughout, matching stampla 0.2
   vocabulary; requires stampla >= 0.2.
+- Depends on PySide6-Essentials instead of the full PySide6
+  metapackage — the app uses no Addons module, and the packaged
+  bundle is roughly half the size.
 
 ### Added
 
+- App icon: an aperture iris with clock hands in the opening, drawn
+  from geometry at every size (small sizes are redrawn bolder, not
+  downscaled).
+- macOS app bundle: releases attach an Apple Silicon .dmg built with
+  PyInstaller; the bundle is ad-hoc signed until there is a Developer
+  ID, and the README documents the one-time Open Anyway step.
 - Dark theme: graphite palette with a safelight-amber accent.
 - Background worker: library calls run off the UI thread with
   throttled progress events and a cooperative stop flag.

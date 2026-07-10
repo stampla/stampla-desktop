@@ -14,6 +14,25 @@ click away.
 
 Early development.
 
+## Install
+
+**macOS (Apple Silicon):** download `Stampla-<version>-arm64.dmg`
+from [Releases](https://github.com/stampla/stampla-desktop/releases)
+and drag the app to Applications. The build is not yet signed with an
+Apple Developer ID, so the first launch is blocked: open **System
+Settings → Privacy & Security**, scroll to Security and click
+**Open Anyway**. This is needed once.
+
+**Any platform (Python 3.11+):**
+
+```console
+$ uv tool install stampla-desktop
+```
+
+or `pipx install stampla-desktop`. Either way you also need
+[ExifTool](https://exiftool.org/) on `PATH` (macOS:
+`brew install exiftool`).
+
 ## Run
 
 ```console
