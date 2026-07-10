@@ -56,6 +56,8 @@ class TreeRow:
 
 
 class SettingsPage(Page):
+    ready_status = "Changes are validated before they reach the file."
+
     def __init__(self, window: MainWindow) -> None:
         super().__init__("Settings", window)
         self.subtitle.setText(

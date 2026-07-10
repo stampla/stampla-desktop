@@ -46,3 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings view: edit the archive configuration with validation before
   every save and hand-written comments preserved; the naming pattern is
   shown read-only. First-run flow can create a new archive config.
+- Design pass: one clean surface per card (no label striping), sidebar
+  wordmark, empty states on every action view, tinted verdict banner,
+  severity stripes, status pills, calm undo, styled form controls, and
+  per-view status messages that can no longer go stale.

@@ -51,7 +51,13 @@ def load_archive(config_path: Path) -> Archive:
 def clear_layout(layout: QtWidgets.QLayout) -> None:
     while (item := layout.takeAt(0)) is not None:
         if widget := item.widget():
+            # unparent immediately: a merely take()n widget keeps painting
+            # at its old geometry until the deferred delete runs
+            widget.hide()
+            widget.setParent(None)
             widget.deleteLater()
+        elif child := item.layout():
+            clear_layout(child)
 
 
 def card() -> tuple[QtWidgets.QFrame, QtWidgets.QVBoxLayout]:
@@ -177,12 +183,15 @@ class CliPanel(QtWidgets.QFrame):
 class Page(QtWidgets.QWidget):
     """Header + toolbar + scrollable body, shared by all views."""
 
+    #: a view's resting one-line status, shown when it becomes visible idle
+    ready_status: str = ""
+
     def __init__(self, title: str, window: MainWindow) -> None:
         super().__init__()
         self.window_ = window
         outer = QtWidgets.QVBoxLayout(self)
-        outer.setContentsMargins(26, 22, 26, 20)
-        outer.setSpacing(10)
+        outer.setContentsMargins(28, 24, 28, 22)
+        outer.setSpacing(12)
 
         self.title = QtWidgets.QLabel(title)
         self.title.setObjectName("h1")
@@ -193,13 +202,13 @@ class Page(QtWidgets.QWidget):
         outer.addWidget(self.subtitle)
 
         self.toolbar = QtWidgets.QHBoxLayout()
-        self.toolbar.setSpacing(8)
+        self.toolbar.setSpacing(10)
         outer.addLayout(self.toolbar)
 
         body_host = QtWidgets.QWidget()
         self.body = QtWidgets.QVBoxLayout(body_host)
         self.body.setContentsMargins(0, 6, 0, 0)
-        self.body.setSpacing(10)
+        self.body.setSpacing(12)
         self.body.addStretch()
 
         scroll = QtWidgets.QScrollArea()
@@ -214,6 +223,27 @@ class Page(QtWidgets.QWidget):
 
     def status(self, message: str) -> None:
         self.window_.statusBar().showMessage(message)
+
+    def resting_status(self) -> str:
+        """The one-line status a view shows when it becomes visible and idle."""
+        return self.ready_status or f"Archive: {self.archive.root}"
+
+    def show_empty(self, glyph: str, title: str, hint: str) -> None:
+        """Replace the body with a centered glyph/title/hint placeholder."""
+        self.clear_body()
+        block = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(block)
+        layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(8)
+        for text, name in ((glyph, "emptyGlyph"), (title, "emptyTitle"), (hint, "emptyHint")):
+            label = QtWidgets.QLabel(text)
+            label.setObjectName(name)
+            label.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
+            label.setWordWrap(True)
+            layout.addWidget(label)
+        # body already ends with a stretch; a leading stretch centers the block
+        self.body.insertStretch(0)
+        self.body.insertWidget(1, block, 0, QtCore.Qt.AlignmentFlag.AlignHCenter)
 
     def add_card(self, widget: QtWidgets.QWidget) -> None:
         self.body.insertWidget(self.body.count() - 1, widget)

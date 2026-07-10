@@ -31,6 +31,8 @@ MAX_ROWS = 300
 
 
 class OrganizePage(Page):
+    ready_status = "Choose a folder to triage — nothing is ever renamed."
+
     def __init__(self, window: MainWindow) -> None:
         super().__init__("Organize", window)
         self.subtitle.setText(
@@ -58,6 +60,11 @@ class OrganizePage(Page):
         self.toolbar.addWidget(self.source_label, 1)
         self.add_work_controls()
         self.add_cli(self.cli_commands)
+        self.show_empty(
+            "☰",
+            "No folder selected",
+            "Pick a messy folder to see what it would become — organize never renames.",
+        )
 
     def cli_commands(self) -> list[tuple[str, str]]:
         source = self.source if self.source is not None else Path("/path/to/messy-folder")
@@ -147,6 +154,7 @@ class OrganizePage(Page):
         ]
         if flagged:
             frame, layout = card()
+            frame.setProperty("severity", "warn")
             layout.addWidget(
                 rich_label(
                     f'<span style="color:{theme.PALETTE["warn"]}"><b>{len(flagged)}'

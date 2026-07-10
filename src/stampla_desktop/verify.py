@@ -26,6 +26,8 @@ BLURB = "Recompute every name from metadata and content; report what disagrees."
 
 
 class VerifyPage(Page):
+    ready_status = "Run a check to see the archive's health."
+
     def __init__(self, window: MainWindow) -> None:
         super().__init__("Verify", window)
         self.subtitle.setText(BLURB)
@@ -44,6 +46,11 @@ class VerifyPage(Page):
         self.add_work_controls()
         self.add_cli(self.cli_commands)
         self.recheck.toggled.connect(lambda _: self.cli_panel.refresh())
+        self.show_empty(
+            "✓",
+            "The archive has not been checked yet",
+            "Check everything re-computes every name from metadata and content.",
+        )
 
     def cli_commands(self) -> list[tuple[str, str]]:
         base = ["verify", "--config", self.archive.config_path]
@@ -123,6 +130,7 @@ class VerifyPage(Page):
                 continue
             color = theme.PALETTE[buckets.color_of(bucket)]
             frame, layout = card()
+            frame.setProperty("severity", buckets.color_of(bucket))
             layout.addWidget(
                 rich_label(
                     f'<span style="color:{color}"><b>{len(findings):,} · '

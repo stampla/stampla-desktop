@@ -16,7 +16,6 @@ from stampla.apply import ApplyResult, apply_plan, undo_journal
 from stampla.journal import Journal, journal_summaries
 from PySide6 import QtCore, QtWidgets
 
-from stampla_desktop import theme
 from stampla_desktop.base import Page, card, cli, confirm, rich_label, when
 from stampla_desktop.worker import run_async
 
@@ -37,6 +36,8 @@ STATUS_STYLE = {
 
 
 class HistoryPage(Page):
+    ready_status = "Every applied change, newest first."
+
     def __init__(self, window: MainWindow) -> None:
         super().__init__("History", window)
         self.subtitle.setText(
@@ -71,20 +72,28 @@ class HistoryPage(Page):
                 )
             )
         for summary in newest_first[:MAX_ROWS]:
-            color_key, meaning = STATUS_STYLE.get(summary.status, ("muted", ""))
-            color = theme.PALETTE[color_key]
+            _color_key, meaning = STATUS_STYLE.get(summary.status, ("muted", ""))
             frame, layout = card()
             row = QtWidgets.QHBoxLayout()
             column = QtWidgets.QVBoxLayout()
             origin = summary.command or summary.kind
-            column.addWidget(
-                rich_label(
-                    f"<b>{html.escape(origin)}</b>"
-                    f" · {summary.groups} group(s)"
-                    f' · <span style="color:{color}"><b>{summary.status}</b></span>'
-                    f' <span style="color:{theme.PALETTE["faint"]}">({meaning})</span>'
-                )
+
+            title_row = QtWidgets.QHBoxLayout()
+            title_row.setSpacing(8)
+            title_row.addWidget(
+                rich_label(f"<b>{html.escape(origin)}</b> · {summary.groups} group(s)", wrap=False),
+                0,
             )
+            pill = QtWidgets.QLabel(summary.status)
+            pill.setObjectName("pill")
+            pill.setProperty("status", summary.status)
+            title_row.addWidget(pill, 0)
+            meaning_label = QtWidgets.QLabel(meaning)
+            meaning_label.setObjectName("faint")
+            title_row.addWidget(meaning_label, 0)
+            title_row.addStretch(1)
+            column.addLayout(title_row)
+
             name = QtWidgets.QLabel(f"{when(summary.created_at)} · {summary.path.name}")
             name.setObjectName("faint")
             column.addWidget(name)

@@ -44,6 +44,8 @@ BLURB = "Preview stale names as old → new, then apply — journaled and revert
 
 
 class RenamePage(Page):
+    ready_status = "Preview to see what would change."
+
     def __init__(self, window: MainWindow) -> None:
         super().__init__("Rename", window)
         self.subtitle.setText(
@@ -71,6 +73,11 @@ class RenamePage(Page):
         self.toolbar.addStretch()
         self.add_work_controls()
         self.add_cli(self.cli_commands)
+        self.show_empty(
+            "⟳",
+            "No plan yet",
+            "Preview finds files whose derived name no longer matches.",
+        )
 
     @property
     def dam_configured(self) -> bool:

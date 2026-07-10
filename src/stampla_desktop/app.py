@@ -48,8 +48,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.sidebar = QtWidgets.QListWidget()
         self.sidebar.setObjectName("sidebar")
-        self.sidebar.setFixedWidth(190)
         self.stack = QtWidgets.QStackedWidget()
+
+        host = QtWidgets.QWidget()
+        host.setObjectName("sidebarHost")
+        host.setFixedWidth(190)
+        host_layout = QtWidgets.QVBoxLayout(host)
+        host_layout.setContentsMargins(0, 0, 0, 0)
+        host_layout.setSpacing(0)
+        wordmark = QtWidgets.QLabel('<span style="color:#e8a33d">stamp</span>la')
+        wordmark.setObjectName("wordmark")
+        wordmark.setTextFormat(QtCore.Qt.TextFormat.RichText)
+        host_layout.addWidget(wordmark)
+        host_layout.addWidget(self.sidebar)
 
         tasks = [(spec.label, spec.blurb, index) for index, spec in enumerate(VIEWS, start=1)]
         self.sidebar.addItem(QtWidgets.QListWidgetItem("Overview"))
@@ -58,7 +69,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sidebar.addItem(QtWidgets.QListWidgetItem(spec.label))
             self.stack.addWidget(spec.factory(self))
 
-        self.sidebar.currentRowChanged.connect(self.stack.setCurrentIndex)
+        self.sidebar.currentRowChanged.connect(self._row_changed)
         self.sidebar.setCurrentRow(0)
         self.set_cli(bool(self.settings.value("show_cli", False, type=bool)))
 
@@ -66,10 +77,17 @@ class MainWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QHBoxLayout(central)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        layout.addWidget(self.sidebar)
+        layout.addWidget(host)
         layout.addWidget(self.stack, 1)
         self.setCentralWidget(central)
         self.statusBar().showMessage(f"Archive: {archive.root}")
+
+    def _row_changed(self, row: int) -> None:
+        """Switch views and freshen the status bar, so it never lies for the new view."""
+        self.stack.setCurrentIndex(row)
+        page = self.stack.widget(row)
+        if isinstance(page, Page) and not getattr(page, "busy", False):
+            self.statusBar().showMessage(page.resting_status())
 
     def go(self, index: int) -> None:
         self.sidebar.setCurrentRow(index)

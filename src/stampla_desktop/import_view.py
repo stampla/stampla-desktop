@@ -42,6 +42,8 @@ MAX_GROUP_ROWS = 300
 
 
 class ImportPage(Page):
+    ready_status = "Choose a card or folder, then Preview."
+
     def __init__(self, window: MainWindow) -> None:
         super().__init__("Import", window)
         self.subtitle.setText(
@@ -70,6 +72,12 @@ class ImportPage(Page):
         self.toolbar.addWidget(self.source_label, 1)
         self.add_work_controls()
         self.add_cli(self.cli_commands)
+        self.show_empty(
+            "⇥",
+            "No source selected",
+            "Choose a memory card or folder — Preview shows what would be imported"
+            " without copying anything.",
+        )
 
     def cli_commands(self) -> list[tuple[str, str]]:
         source = self.source if self.source is not None else Path("/Volumes/CARD")
@@ -90,7 +98,11 @@ class ImportPage(Page):
         self.source_label.setText(str(source))
         self.preview_button.setEnabled(True)
         self.apply_button.setEnabled(False)
-        self.clear_body()
+        self.show_empty(
+            "⇥",
+            source.name,
+            "Ready — Preview shows what would be imported without copying anything.",
+        )
         self.cli_panel.refresh()
 
     def confirm_apply(self) -> None:
@@ -206,11 +218,15 @@ class ImportPage(Page):
                 f"<b>{moved:,}</b> file(s) in <b>{len(plan.moves):,}</b> group(s) would be copied"
             )
         summary = f"{verb} · {already:,} already in the archive · {ignored:,} ignored by policy"
-        self.add_card(rich_label(summary))
+        # the banner already carries the counts for an applied run; keep the
+        # standalone summary line only for dry runs, which have no banner
+        if verdict is None:
+            self.add_card(rich_label(summary))
 
         problems = [f for f in report.findings if f.bucket.severity.value in ("alarm", "attention")]
         if problems:
             frame, layout = card()
+            frame.setProperty("severity", "crit")
             layout.addWidget(
                 rich_label(
                     f'<span style="color:{theme.PALETTE["crit"]}"><b>{len(problems)}'
@@ -272,7 +288,12 @@ class ImportPage(Page):
 
 
 def _verdict_banner(verdict: ImportVerdict) -> QtWidgets.QFrame:
-    frame, layout = card()
+    frame = QtWidgets.QFrame()
+    frame.setObjectName("banner")
+    frame.setProperty("verdict", "safe" if verdict.safe_to_format else "unsafe")
+    layout = QtWidgets.QVBoxLayout(frame)
+    layout.setContentsMargins(14, 12, 14, 12)
+    layout.setSpacing(6)
     if verdict.safe_to_format:
         color = theme.PALETTE["ok"]
         title = "Card fully accounted for — safe to format"
