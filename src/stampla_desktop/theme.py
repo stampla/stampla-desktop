@@ -1,6 +1,12 @@
 """Palette and application stylesheet (safelight amber on graphite)."""
 
+import sys
 from string import Template
+
+# One real family per platform. Naming a family that does not exist
+# (like "monospace" on macOS, which is not a fontconfig alias there)
+# makes Qt build its whole alias table on first use and warn about it.
+MONO_FAMILY = {"darwin": "Menlo", "win32": "Consolas"}.get(sys.platform, "monospace")
 
 PALETTE = {
     "bg": "#16181d",
@@ -34,7 +40,7 @@ QStatusBar::item { border: none; }
 /* ---- sidebar ----------------------------------------------------- */
 QWidget#sidebarHost { background: $panel; border-right: 1px solid $line_soft; }
 QLabel#wordmark {
-    font-family: Menlo, monospace; font-size: 14px; font-weight: 700;
+    font-family: $mono; font-size: 14px; font-weight: 700;
     color: $text; padding: 18px 16px 12px 16px; background: transparent;
 }
 QListWidget#sidebar {
@@ -53,7 +59,7 @@ QListWidget#sidebar::item:selected {
 QLabel#h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
 QLabel#sub { color: $muted; }
 QLabel#faint { color: $faint; font-size: 12px; }
-QLabel#emptyGlyph { color: $faint; font-family: Menlo, monospace; font-size: 30px; }
+QLabel#emptyGlyph { color: $faint; font-family: $mono; font-size: 30px; }
 QLabel#emptyTitle { color: $muted; font-size: 15px; font-weight: 600; }
 QLabel#emptyHint { color: $faint; }
 
@@ -126,7 +132,7 @@ QComboBox QAbstractItemView {
 
 QPushButton#cliToggle {
     background: transparent; border: none; color: $faint;
-    font-family: Menlo, monospace; font-weight: 700; padding: 4px 8px;
+    font-family: $mono; font-weight: 700; padding: 4px 8px;
 }
 QPushButton#cliToggle:hover { color: $muted; background: transparent; }
 QPushButton#cliToggle:checked { color: $amber; }
@@ -153,4 +159,4 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
 
 QMessageBox QLabel { color: $text; background: transparent; }
 QToolTip { background: $panel2; color: $text; border: 1px solid $line; }
-""").substitute(PALETTE)
+""").substitute(PALETTE | {"mono": MONO_FAMILY})

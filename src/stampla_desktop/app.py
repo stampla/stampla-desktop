@@ -7,6 +7,7 @@ engine as the CLI. Views are named after the commands they wrap.
 
 from __future__ import annotations
 
+import signal
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -236,8 +237,13 @@ def pick_config(settings: QtCore.QSettings) -> Path | None:
 
 
 def main() -> int:
+    # Ctrl+C from a terminal: Python's KeyboardInterrupt never fires inside
+    # the Qt event loop, so restore the default handler and just terminate.
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("Stampla")
+    app.setApplicationDisplayName("Stampla")
     app.setWindowIcon(QtGui.QIcon(str(Path(__file__).parent / "resources" / "icon.png")))
     app.setStyle("Fusion")
     app.setStyleSheet(theme.QSS)
