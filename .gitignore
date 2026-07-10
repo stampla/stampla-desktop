@@ -6,3 +6,6 @@ dist/
 demo/archive/
 demo/card/
 demo/demo.toml
+build/
+assets/icon.icns
+assets/icon.iconset/
