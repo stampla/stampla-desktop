@@ -87,7 +87,7 @@ class TestCreateArchiveConfig:
 def test_exiftool_warning_when_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     from stampla_desktop import app as app_module
 
-    monkeypatch.setattr(app_module.shutil, "which", lambda _: None)
+    monkeypatch.setattr("stampla_desktop.app.shutil.which", lambda _: None)
     warning = app_module.exiftool_warning()
     assert warning is not None
     assert "ExifTool" in warning
@@ -97,5 +97,7 @@ def test_exiftool_warning_when_missing(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_no_warning_when_exiftool_present(monkeypatch: pytest.MonkeyPatch) -> None:
     from stampla_desktop import app as app_module
 
-    monkeypatch.setattr(app_module.shutil, "which", lambda _: "/opt/homebrew/bin/exiftool")
+    monkeypatch.setattr(
+        "stampla_desktop.app.shutil.which", lambda _: "/opt/homebrew/bin/exiftool"
+    )
     assert app_module.exiftool_warning() is None
