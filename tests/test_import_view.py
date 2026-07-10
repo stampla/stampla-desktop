@@ -100,3 +100,26 @@ class TestImportView:
         assert not page.preview_button.isEnabled()
         page.start(apply=False)  # must be a no-op without a source
         assert not page.busy
+
+
+class TestPolicyIgnoredFiles:
+    """A card where every file is excluded must not preview as empty."""
+
+    def test_all_ignored_card_explains_itself(
+        self, qapp: QtWidgets.QApplication, tmp_path: Path
+    ) -> None:
+        config = write_config(tmp_path / "archive", '\n[import]\nignore = ["*.jpg"]\n')
+        window = MainWindow(load_archive(config))
+        card = tmp_path / "card"
+        card.mkdir()
+        (card / "DSC_0001.jpg").write_bytes(TINY_JPEG)
+
+        page = import_page(window)
+        page.set_source(card)
+        page.start(apply=False)
+        spin(qapp, lambda: not page.busy)
+
+        text = labels_text(page)
+        assert "1 ignored by policy" in text
+        assert "excluded by your import ignore patterns" in text
+        assert "*.jpg" in text

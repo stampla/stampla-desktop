@@ -223,6 +223,25 @@ class ImportPage(Page):
         if verdict is None:
             self.add_card(rich_label(summary))
 
+        if ignored and not report.scanned:
+            # every file on the card was excluded before planning even began;
+            # without this the preview reads as "the card is empty"
+            frame, layout = card()
+            frame.setProperty("severity", "info")
+            patterns = ", ".join(self.archive.config.import_ignore)
+            layout.addWidget(
+                rich_label(
+                    f'<span style="color:{theme.PALETTE["info"]}"><b>Every file here is'
+                    " excluded by your import ignore patterns</b></span>"
+                    f'&nbsp;&nbsp;<span style="color:{theme.PALETTE["muted"]}">'
+                    f"All {ignored:,} file(s) match"
+                    f' <span style="{MONO}">{html.escape(patterns)}</span> or sit on hidden'
+                    " paths. Nothing was skipped silently — adjust the patterns in Settings"
+                    " if these files should be considered.</span>"
+                )
+            )
+            self.add_card(frame)
+
         problems = [f for f in report.findings if f.bucket.severity.value in ("alarm", "attention")]
         if problems:
             frame, layout = card()

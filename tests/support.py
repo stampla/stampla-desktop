@@ -43,10 +43,10 @@ def spin(app: QtWidgets.QApplication, done: Callable[[], bool], timeout: float =
     app.processEvents()
 
 
-def write_config(root: Path) -> Path:
+def write_config(root: Path, extra: str = "") -> Path:
     root.mkdir(parents=True, exist_ok=True)
     config = root / "config.toml"
-    config.write_text(CONFIG_TEMPLATE.format(root=str(root)))
+    config.write_text(CONFIG_TEMPLATE.format(root=str(root)) + extra)
     return config
 
 

@@ -83,3 +83,36 @@ class TestOrganizeView:
         text = labels_text(page)
         assert "need your eyes" in text
         assert "modification time" in text
+
+
+class TestPolicyIgnoredFiles:
+    """Files excluded by ignore patterns must never be invisible.
+
+    A folder where every file matches an import ignore pattern must not
+    render as "0 of 0" — that reads as an empty folder and hides real
+    files from the person deciding what to keep.
+    """
+
+    def test_all_ignored_folder_explains_itself(
+        self, qapp: QtWidgets.QApplication, tmp_path: Path
+    ) -> None:
+        from tests.support import TINY_JPEG
+
+        config = write_config(tmp_path / "archive", '\n[import]\nignore = ["*.jpg"]\n')
+        window = MainWindow(load_archive(config))
+        messy = tmp_path / "messy"
+        messy.mkdir()
+        (messy / "a.jpg").write_bytes(TINY_JPEG)
+        (messy / "b.jpg").write_bytes(TINY_JPEG)
+
+        page = page_of(window, OrganizePage)
+        assert isinstance(page, OrganizePage)
+        page.source = messy
+        page.analyze_button.setEnabled(True)
+        page.start()
+        spin(qapp, lambda: not page.busy)
+
+        text = labels_text(page)
+        assert "2 ignored by policy" in text
+        assert "excluded by your import ignore patterns" in text
+        assert "*.jpg" in text

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 
 from stampla.importer import ImportPlan
 from stampla.organize import run_organize
-from stampla.report import Report
+from stampla.report import Bucket, Report
 from PySide6 import QtWidgets
 
 from stampla_desktop import buckets, theme
@@ -139,12 +139,33 @@ class OrganizePage(Page):
 
     def render_result(self, report: Report, plan: ImportPlan) -> None:
         self.clear_body()
-        self.add_card(
-            rich_label(
-                f"<b>{len(plan.moves):,}</b> group(s) look importable out of"
-                f" <b>{report.groups:,}</b> · scanned {report.scanned:,} file(s)"
-            )
+        ignored = [f for f in report.findings if f.bucket is Bucket.IGNORED]
+        summary = (
+            f"<b>{len(plan.moves):,}</b> group(s) look importable out of"
+            f" <b>{report.groups:,}</b> · {report.scanned:,} file(s) considered"
         )
+        if ignored:
+            summary += f" · {len(ignored):,} ignored by policy"
+        self.add_card(rich_label(summary))
+
+        if ignored and not report.scanned:
+            # "0 of 0" with no explanation reads as an empty folder — say
+            # out loud that the files exist and why none were considered.
+            frame, layout = card()
+            frame.setProperty("severity", "info")
+            patterns = ", ".join(self.archive.config.import_ignore)
+            layout.addWidget(
+                rich_label(
+                    f'<span style="color:{theme.PALETTE["info"]}"><b>Every file here is'
+                    " excluded by your import ignore patterns</b></span>"
+                    f'&nbsp;&nbsp;<span style="color:{theme.PALETTE["muted"]}">'
+                    f"All {len(ignored):,} file(s) match"
+                    f' <span style="{MONO}">{html.escape(patterns)}</span> or sit on hidden'
+                    " paths. Nothing was skipped silently — adjust the patterns in Settings"
+                    " if these files should be considered.</span>"
+                )
+            )
+            self.add_card(frame)
 
         flagged = [
             f
