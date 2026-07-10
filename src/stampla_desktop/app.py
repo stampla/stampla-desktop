@@ -246,6 +246,9 @@ def main() -> int:
     app.setApplicationDisplayName("Stampla")
     app.setWindowIcon(QtGui.QIcon(str(Path(__file__).parent / "resources" / "icon.png")))
     app.setStyle("Fusion")
+    # An explicit real family: platforms without a themed default fall back
+    # to the fictional "Sans Serif", which triggers a slow alias lookup
+    app.setFont(QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.GeneralFont))
     app.setStyleSheet(theme.QSS)
 
     settings = QtCore.QSettings("stampla", "desktop")
