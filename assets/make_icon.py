@@ -1,7 +1,8 @@
-"""Render the app icon: an aperture iris with clock hands in the opening.
+"""Render the app icon: an aperture iris carved from an amber disc, with
+clock hands at 10:08 in the opening.
 
 Regenerates every size from geometry — there is no source image. Small
-sizes are redrawn with heavier strokes and less detail rather than
+sizes are simplified (no hands at 16px, heavier cuts at 32) rather than
 downscaled, so the mark stays legible in the Dock and the menu bar.
 
 Usage:
@@ -24,19 +25,62 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-GRAPHITE = QtGui.QColor("#1e2128")
-GRAPHITE_EDGE = QtGui.QColor("#16181d")
-AMBER = QtGui.QColor("#e8a33d")
-HANDS = QtGui.QColor("#e9e7e2")
+TILE_TOP = QtGui.QColor("#23262e")
+TILE_BOTTOM = QtGui.QColor("#14161b")
+DISC_LIGHT = QtGui.QColor("#f2b459")
+DISC_DARK = QtGui.QColor("#cf8a24")
+CUT = QtGui.QColor("#181a20")
+HANDS = QtGui.QColor("#f4f1ea")
+PINION = QtGui.QColor("#e8a33d")
 
 #: side of the generated square, one render per icns slot
 ICONSET_SIZES = (16, 32, 64, 128, 256, 512, 1024)
 
 
-def _pen(color: QtGui.QColor, width: float) -> QtGui.QPen:
-    pen = QtGui.QPen(color, width)
-    pen.setCapStyle(QtCore.Qt.PenCapStyle.RoundCap)
-    return pen
+def _pt(center: QtCore.QPointF, r: float, a: float) -> QtCore.QPointF:
+    return QtCore.QPointF(center.x() + r * math.cos(a), center.y() + r * math.sin(a))
+
+
+def _ray_to_circle(
+    origin: QtCore.QPointF,
+    direction: tuple[float, float],
+    center: QtCore.QPointF,
+    radius: float,
+) -> QtCore.QPointF:
+    """Farthest intersection of origin + t*direction with the circle."""
+    ox, oy = origin.x() - center.x(), origin.y() - center.y()
+    dx, dy = direction
+    a = dx * dx + dy * dy
+    b = 2 * (ox * dx + oy * dy)
+    c = ox * ox + oy * oy - radius * radius
+    t = (-b + math.sqrt(max(b * b - 4 * a * c, 0.0))) / (2 * a)
+    return QtCore.QPointF(origin.x() + t * dx, origin.y() + t * dy)
+
+
+def _hand(
+    p: QtGui.QPainter,
+    center: QtCore.QPointF,
+    a: float,
+    length: float,
+    base_w: float,
+    tip_w: float,
+) -> None:
+    """A tapered hand: wide at the pinion, narrow at the tip."""
+    tip = _pt(center, length, a)
+    nx, ny = math.cos(a + math.tau / 4), math.sin(a + math.tau / 4)
+    back = _pt(center, -length * 0.14, a)
+    p.setPen(QtCore.Qt.PenStyle.NoPen)
+    p.setBrush(HANDS)
+    p.drawPolygon(
+        QtGui.QPolygonF(
+            [
+                QtCore.QPointF(back.x() + nx * base_w / 2, back.y() + ny * base_w / 2),
+                QtCore.QPointF(back.x() - nx * base_w / 2, back.y() - ny * base_w / 2),
+                QtCore.QPointF(tip.x() - nx * tip_w / 2, tip.y() - ny * tip_w / 2),
+                QtCore.QPointF(tip.x() + nx * tip_w / 2, tip.y() + ny * tip_w / 2),
+            ]
+        )
+    )
 
 
 def draw(painter: QtGui.QPainter, size: int) -> None:
@@ -45,58 +89,65 @@ def draw(painter: QtGui.QPainter, size: int) -> None:
     tiny = size <= 16
 
     tile = QtCore.QRectF(size * 0.06, size * 0.06, size * 0.88, size * 0.88)
-    gradient = QtGui.QLinearGradient(0, tile.top(), 0, tile.bottom())
-    gradient.setColorAt(0.0, GRAPHITE)
-    gradient.setColorAt(1.0, GRAPHITE_EDGE)
+    g = QtGui.QLinearGradient(0, tile.top(), 0, tile.bottom())
+    g.setColorAt(0.0, TILE_TOP)
+    g.setColorAt(1.0, TILE_BOTTOM)
     painter.setPen(QtCore.Qt.PenStyle.NoPen)
-    painter.setBrush(gradient)
+    painter.setBrush(g)
     painter.drawRoundedRect(tile, size * 0.20, size * 0.20)
 
-    ring_r = size * 0.315
-    painter.setPen(_pen(AMBER, size * (0.055 if small else 0.036)))
-    painter.setBrush(QtCore.Qt.BrushStyle.NoBrush)
-    painter.drawEllipse(center, ring_r, ring_r)
+    disc_r = size * 0.335
+    painter.setBrush(QtGui.QColor(0, 0, 0, 70))
+    painter.drawEllipse(
+        QtCore.QPointF(center.x(), center.y() + size * 0.012), disc_r * 1.03, disc_r * 1.03
+    )
+    rg = QtGui.QRadialGradient(_pt(center, disc_r * 0.75, math.radians(-125)), disc_r * 2.1)
+    rg.setColorAt(0.0, DISC_LIGHT)
+    rg.setColorAt(1.0, DISC_DARK)
+    painter.setBrush(rg)
+    painter.drawEllipse(center, disc_r, disc_r)
 
-    if not tiny:
-        # aperture iris: six pinwheel blades from the rim to the opening
-        outer_r = ring_r * 0.92
-        open_r = ring_r * 0.54
-        painter.setPen(_pen(AMBER, size * (0.045 if small else 0.028)))
-        twist = math.radians(62.0)
-        for i in range(6):
-            start = math.tau * i / 6
-            painter.drawLine(
-                QtCore.QPointF(
-                    center.x() + outer_r * math.cos(start),
-                    center.y() + outer_r * math.sin(start),
-                ),
-                QtCore.QPointF(
-                    center.x() + open_r * math.cos(start + twist),
-                    center.y() + open_r * math.sin(start + twist),
-                ),
-            )
+    # aperture iris: hexagonal opening plus each side extended to the rim
+    open_r = disc_r * 0.56
+    rot = math.radians(-15.0)
+    verts = [_pt(center, open_r, rot + k * math.tau / 6) for k in range(6)]
+    painter.setBrush(CUT)
+    painter.drawPolygon(QtGui.QPolygonF(verts))
+    cut_pen = QtGui.QPen(CUT, size * (0.034 if small else 0.022))
+    cut_pen.setCapStyle(QtCore.Qt.PenCapStyle.FlatCap)
+    painter.setPen(cut_pen)
+    for k in range(6):
+        a, b = verts[k - 1], verts[k]
+        d = (b.x() - a.x(), b.y() - a.y())
+        n = math.hypot(*d)
+        painter.drawLine(b, _ray_to_circle(b, (d[0] / n, d[1] / n), center, disc_r))
+
+    if tiny:
+        return  # at 16px the iris alone is the mark
 
     # clock hands at 10:08; the aperture opening is the dial
-    hands = ((-60.0, 0.26, 0.046), (35.0, 0.40, 0.032))
-    if tiny:
-        hands = ((-60.0, 0.42, 0.085), (35.0, 0.62, 0.065))
-    elif small:
-        hands = ((-60.0, 0.26, 0.060), (35.0, 0.40, 0.048))
-    for angle_deg, length, width in hands:
-        angle = math.radians(angle_deg - 90.0)
-        painter.setPen(_pen(HANDS, size * width))
-        painter.drawLine(
-            center,
-            QtCore.QPointF(
-                center.x() + ring_r * length * math.cos(angle),
-                center.y() + ring_r * length * math.sin(angle),
-            ),
-        )
-
-    if not small:
-        painter.setPen(QtCore.Qt.PenStyle.NoPen)
-        painter.setBrush(AMBER)
-        painter.drawEllipse(center, size * 0.024, size * 0.024)
+    scale = 1.35 if small else 1.0
+    _hand(
+        painter,
+        center,
+        math.radians(-150.0),
+        disc_r * 0.30,
+        size * 0.046 * scale,
+        size * 0.024 * scale,
+    )
+    _hand(
+        painter,
+        center,
+        math.radians(-55.0),
+        disc_r * 0.46,
+        size * 0.034 * scale,
+        size * 0.015 * scale,
+    )
+    painter.setPen(QtCore.Qt.PenStyle.NoPen)
+    painter.setBrush(PINION)
+    painter.drawEllipse(center, size * 0.030 * scale, size * 0.030 * scale)
+    painter.setBrush(CUT)
+    painter.drawEllipse(center, size * 0.013 * scale, size * 0.013 * scale)
 
 
 def render(size: int) -> QtGui.QImage:
