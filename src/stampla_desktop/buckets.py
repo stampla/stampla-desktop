@@ -43,6 +43,9 @@ TITLE = {
     Bucket.RENAMED: "renamed",
     Bucket.ALREADY_IMPORTED: "already in the archive",
     Bucket.IGNORED: "ignored by policy",
+    Bucket.MISPLACED: "in the wrong folder",
+    Bucket.RELOCATE_PENDING: "move planned",
+    Bucket.RELOCATED: "moved",
 }
 
 EXPLAIN = {
@@ -85,4 +88,10 @@ EXPLAIN = {
     Bucket.RENAMED: "Done.",
     Bucket.ALREADY_IMPORTED: "Byte-identical copy already in the archive.",
     Bucket.IGNORED: "On your ignore list — review once, then it's policy.",
+    Bucket.MISPLACED: (
+        "The name says when this was captured, and the tree layout says"
+        " where that belongs — this file is shelved somewhere else."
+    ),
+    Bucket.RELOCATE_PENDING: "Planned; nothing moved yet.",
+    Bucket.RELOCATED: "Done.",
 }
