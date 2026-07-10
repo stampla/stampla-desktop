@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Files excluded by import ignore patterns are counted in the Organize
+  summary, and a folder where every file is excluded says so explicitly
+  in Organize and Import instead of rendering as empty.
+
 ### Changed
 
 - Groups replace families throughout, matching stampla 0.2
