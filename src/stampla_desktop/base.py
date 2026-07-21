@@ -22,9 +22,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from PySide6 import QtCore, QtWidgets
 from stampla.config import Config, ConfigError, load_config
 from stampla.progress import ProgressEvent
-from PySide6 import QtCore, QtWidgets
 
 from stampla_desktop import theme
 

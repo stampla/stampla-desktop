@@ -17,12 +17,12 @@ from __future__ import annotations
 import html
 from typing import TYPE_CHECKING
 
+from PySide6 import QtWidgets
 from stampla.dam import InjectOptions, run_inject
 from stampla.journal import GroupMove
 from stampla.progress import Monitor
 from stampla.renamer import RenameOptions, run_rename
 from stampla.report import Bucket, Report
-from PySide6 import QtWidgets
 
 from stampla_desktop import theme
 from stampla_desktop.base import (

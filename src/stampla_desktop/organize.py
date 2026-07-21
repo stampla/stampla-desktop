@@ -13,10 +13,10 @@ import html
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from PySide6 import QtWidgets
 from stampla.importer import ImportPlan
 from stampla.organize import run_organize
 from stampla.report import Bucket, Report
-from PySide6 import QtWidgets
 
 from stampla_desktop import buckets, theme
 from stampla_desktop.base import MONO, Page, card, cli, relative, rich_label

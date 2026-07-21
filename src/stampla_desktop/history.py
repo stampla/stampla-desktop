@@ -12,9 +12,9 @@ import html
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from PySide6 import QtCore, QtWidgets
 from stampla.apply import ApplyResult, apply_plan, undo_journal
 from stampla.journal import Journal, journal_summaries
-from PySide6 import QtCore, QtWidgets
 
 from stampla_desktop.base import Page, card, cli, confirm, rich_label, when
 from stampla_desktop.worker import run_async

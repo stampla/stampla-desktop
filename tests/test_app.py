@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from stampla.config import ConfigError, load_config
 from PySide6 import QtWidgets
+from stampla.config import ConfigError, load_config
 
 from stampla_desktop.app import VIEWS, MainWindow, create_archive_config
 from stampla_desktop.base import load_archive
@@ -97,7 +97,5 @@ def test_exiftool_warning_when_missing(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_no_warning_when_exiftool_present(monkeypatch: pytest.MonkeyPatch) -> None:
     from stampla_desktop import app as app_module
 
-    monkeypatch.setattr(
-        "stampla_desktop.app.shutil.which", lambda _: "/opt/homebrew/bin/exiftool"
-    )
+    monkeypatch.setattr("stampla_desktop.app.shutil.which", lambda _: "/opt/homebrew/bin/exiftool")
     assert app_module.exiftool_warning() is None

@@ -11,9 +11,9 @@ from __future__ import annotations
 import html
 from typing import TYPE_CHECKING
 
+from PySide6 import QtWidgets
 from stampla.report import BUCKET_ORDER, Bucket, Finding, Report, Severity
 from stampla.verify import VerifyOptions, run_verify
-from PySide6 import QtWidgets
 
 from stampla_desktop import buckets, theme
 from stampla_desktop.base import MONO, Page, card, cli, relative, rich_label

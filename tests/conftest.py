@@ -8,8 +8,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from pathlib import Path
 
-import stampla.journal as journal_module
 import pytest
+import stampla.journal as journal_module
 from PySide6 import QtWidgets
 
 

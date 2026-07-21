@@ -21,9 +21,9 @@ from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 import tomlkit
+from PySide6 import QtWidgets
 from stampla.config import ConfigError, load_config
 from stampla.pattern import MAX_PREFIX_LENGTH, NamingPattern, PatternError
-from PySide6 import QtWidgets
 
 from stampla_desktop import theme
 from stampla_desktop.base import MONO, Archive, Page, card, rich_label

@@ -9,9 +9,9 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+from PySide6 import QtWidgets
 from stampla.journal import GroupMove, Rename
 from stampla.report import Bucket, Finding, Report
-from PySide6 import QtWidgets
 
 from stampla_desktop.app import MainWindow
 from stampla_desktop.base import load_archive

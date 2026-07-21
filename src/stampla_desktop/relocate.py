@@ -17,11 +17,11 @@ from __future__ import annotations
 import html
 from typing import TYPE_CHECKING
 
+from PySide6 import QtWidgets
 from stampla.journal import GroupMove
 from stampla.progress import Monitor
 from stampla.relocate import RelocateOptions, run_relocate
 from stampla.report import Bucket, Finding, Report
-from PySide6 import QtWidgets
 
 from stampla_desktop import buckets, theme
 from stampla_desktop.base import (

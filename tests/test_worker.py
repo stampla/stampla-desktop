@@ -5,8 +5,8 @@ from __future__ import annotations
 import threading
 
 import pytest
-from stampla.progress import Monitor, ProgressEvent
 from PySide6 import QtWidgets
+from stampla.progress import Monitor, ProgressEvent
 
 from stampla_desktop.worker import run_async, run_monitored
 from tests.support import spin

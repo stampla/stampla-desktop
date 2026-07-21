@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from PySide6 import QtWidgets
 from stampla.apply import apply_plan
 from stampla.journal import GroupMove, Journal, Rename
-from PySide6 import QtWidgets
 
 import stampla_desktop.history as history_module
 from stampla_desktop.app import MainWindow

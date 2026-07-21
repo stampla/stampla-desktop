@@ -14,8 +14,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from stampla.config import ConfigError, load_config
 from PySide6 import QtCore, QtGui, QtWidgets
+from stampla.config import ConfigError, load_config
 
 from stampla_desktop import (
     history,

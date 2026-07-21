@@ -6,8 +6,8 @@ import threading
 import time
 from collections.abc import Callable
 
-from stampla.progress import Cancelled, Monitor, ProgressEvent
 from PySide6 import QtCore
+from stampla.progress import Cancelled, Monitor, ProgressEvent
 
 
 class _Task(QtCore.QObject):
