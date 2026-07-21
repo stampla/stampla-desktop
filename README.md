@@ -7,7 +7,7 @@ The desktop app for photo and video archives that can prove their own
 integrity: import memory cards, check the archive's health, fix names,
 undo anything — every action a preview first.
 
-Stampla names every photo and video after an identity derived
+Stampla stamps every photo and video with an identity derived
 purely from the file itself — the capture time plus a fingerprint of
 the content:
 
