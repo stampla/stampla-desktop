@@ -93,5 +93,7 @@ class TestHistoryView:
 
         monkeypatch.setattr(history_module, "confirm", lambda *args, **kwargs: True)
         page.confirm_resume(journal.path)
-        spin(qapp, lambda: (tmp_path / "b2.bin").exists())
+        # the file landing is mid-run: wait for the page to finish and
+        # refresh, or the labels race the worker's done signal
+        spin(qapp, lambda: not page.busy and (tmp_path / "b2.bin").exists())
         assert "complete" in labels_text(page)

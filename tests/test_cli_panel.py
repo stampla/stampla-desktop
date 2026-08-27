@@ -15,9 +15,9 @@ from tests.support import page_of, write_config
 
 
 def test_cli_quotes_paths() -> None:
-    assert cli("verify", "--config", Path("/a dir/x.toml")) == (
-        "stampla verify --config '/a dir/x.toml'"
-    )
+    # the platform renders the separators; the quoting is what's under test
+    path = Path("/a dir/x.toml")
+    assert cli("verify", "--config", path) == f"stampla verify --config '{path}'"
 
 
 class TestPanels:
