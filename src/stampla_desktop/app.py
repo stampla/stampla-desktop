@@ -261,7 +261,11 @@ def create_archive_config() -> Path | None:
         )
         return None
 
-    config_path.write_text(DEFAULT_CONFIG_TEMPLATE.replace("{root}", str(folder)), encoding="utf-8")
+    # forward slashes: a Windows path's backslashes would be TOML escape
+    # sequences inside the quoted string, and the file would never load
+    config_path.write_text(
+        DEFAULT_CONFIG_TEMPLATE.replace("{root}", folder.as_posix()), encoding="utf-8"
+    )
     try:
         load_config(config_path)
     except (ConfigError, OSError, ValueError) as error:
