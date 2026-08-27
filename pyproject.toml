@@ -13,7 +13,7 @@ requires-python = ">=3.11"
 dynamic = ["version"]
 dependencies = [
     "PySide6-Essentials>=6.7",
-    "stampla>=0.4",
+    "stampla>=0.4,<0.6",
     "tomlkit>=0.12",
 ]
 keywords = ["photography", "video", "exif", "rename", "archive", "gui", "qt"]
@@ -81,6 +81,12 @@ files = ["src/stampla_desktop", "tests"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--strict-markers"
+filterwarnings = [
+    "error",
+    # stampla 0.4 leaves the exiftool pipes to the garbage collector;
+    # 0.5 closes them — drop this line at the relock
+    "ignore:unclosed file:ResourceWarning",
+]
 
 [tool.coverage.run]
 source = ["stampla_desktop"]

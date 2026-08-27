@@ -57,4 +57,6 @@ class TestVerifyView:
         page.start(skip_hash=False)
         page.cancel.set()
         spin(qapp, lambda: not page.busy)
-        assert "Stopped" in window.statusBar().currentMessage() or not page.busy
+        # the operation slot is released, so the next run is accepted
+        assert window.acquire_operation(page, "probe")
+        window.release_operation(page)
