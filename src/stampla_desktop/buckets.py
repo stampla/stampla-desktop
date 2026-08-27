@@ -17,13 +17,24 @@ SEVERITY_COLOR = {
 
 
 def color_of(bucket: Bucket) -> str:
-    return SEVERITY_COLOR[bucket.severity]
+    # a severity this build has never seen still renders — as a warning
+    return SEVERITY_COLOR.get(bucket.severity, "warn")
+
+
+def title_of(bucket: Bucket) -> str:
+    """Presentation title; a bucket from a newer core still renders."""
+    return TITLE.get(bucket, bucket.value.replace("-", " "))
+
+
+def explain_of(bucket: Bucket) -> str:
+    return EXPLAIN.get(bucket, "")
 
 
 TITLE = {
     Bucket.CORRUPTION: "possible corruption",
     Bucket.APPLY_FAILED: "change could not be applied",
     Bucket.HASH_ERROR: "file could not be read",
+    **({Bucket.SCAN_ERROR: "folder could not be scanned"} if hasattr(Bucket, "SCAN_ERROR") else {}),
     Bucket.METADATA_UNREADABLE: "metadata could not be read",
     Bucket.DATE_MISMATCH: "name disagrees with camera time",
     Bucket.UNRESOLVED_DATE: "no capture time found",
@@ -58,6 +69,16 @@ EXPLAIN = {
         " detail, then retry or undo from History."
     ),
     Bucket.HASH_ERROR: "The file could not be read to compute its fingerprint.",
+    **(
+        {
+            Bucket.SCAN_ERROR: (
+                "A folder could not be listed, so files under it are"
+                " unaccounted for — nothing under it was checked or copied."
+            )
+        }
+        if hasattr(Bucket, "SCAN_ERROR")
+        else {}
+    ),
     Bucket.METADATA_UNREADABLE: "ExifTool could not read this file's metadata.",
     Bucket.DATE_MISMATCH: (
         "Usually a date you corrected after import. Fixing renames the"

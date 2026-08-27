@@ -338,22 +338,25 @@ class SettingsPage(Page):
         self.update_pattern_preview()
         self.status("Settings loaded from the file.")
 
-    def check_external_edit(self) -> None:
-        """Warn when the file changed on disk since the form was loaded."""
+    def check_external_edit(self) -> bool:
+        """True when the file changed on disk since the form was loaded."""
         try:
             current = self.archive.config_path.stat().st_mtime
         except OSError:
-            return
-        if self._mtime is not None and current != self._mtime:
-            self.show_error(
-                "The config file changed on disk since this form was loaded —"
-                " Reload before editing, or your save will overwrite those changes."
-            )
+            return False
+        return self._mtime is not None and current != self._mtime
 
     # --- save ----------------------------------------------------------
 
     def save(self) -> None:
         config_path = self.archive.config_path
+        if self.check_external_edit():
+            # writing the form now would silently discard the on-disk edit
+            self.show_error(
+                "Not saved — the config file changed on disk since this form"
+                " was loaded. Reload first, then re-apply your changes."
+            )
+            return
         try:
             document = tomlkit.parse(config_path.read_text(encoding="utf-8"))
         except OSError as error:

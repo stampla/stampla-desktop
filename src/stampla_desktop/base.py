@@ -185,6 +185,8 @@ class Page(QtWidgets.QWidget):
 
     #: a view's resting one-line status, shown when it becomes visible idle
     ready_status: str = ""
+    #: whether this view is running work right now (see begin_work)
+    busy: bool = False
 
     def __init__(self, title: str, window: MainWindow) -> None:
         super().__init__()
@@ -223,6 +225,40 @@ class Page(QtWidgets.QWidget):
 
     def status(self, message: str) -> None:
         self.window_.statusBar().showMessage(message)
+
+    def begin_work(self, label: str) -> bool:
+        """Claim the one app-wide operation slot; ``False`` means refused.
+
+        One operation at a time: overlapping runs would fight over the
+        archive lock only *after* minutes of planning, interleave their
+        progress in the shared status bar, and let one view mutate the
+        tree another is scanning. Refusing up front is the honest form.
+        """
+        if not self.window_.acquire_operation(self, label):
+            return False
+        self.busy = True
+        return True
+
+    def end_work(self) -> None:
+        self.busy = False
+        self.window_.release_operation(self)
+
+    def show_failure(self, context: str, message: str) -> None:
+        """An apply failed: say so in a dialog, full text under Details.
+
+        The status bar truncates to one transient line — too little for
+        a failed change to the archive.
+        """
+        first_line = message.splitlines()[0]
+        self.status(f"{context} failed: {first_line}")
+        box = QtWidgets.QMessageBox(self)
+        box.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+        box.setWindowTitle(context)
+        box.setText(f"{context} failed — nothing is half-done; groups apply all-or-nothing.")
+        box.setInformativeText(first_line)
+        if message.strip() != first_line.strip():
+            box.setDetailedText(message)
+        box.exec()
 
     def resting_status(self) -> str:
         """The one-line status a view shows when it becomes visible and idle."""

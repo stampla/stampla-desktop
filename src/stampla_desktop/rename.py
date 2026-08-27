@@ -52,10 +52,11 @@ class RenamePage(Page):
             "Files whose derived name no longer matches. Renames are validated as a"
             " whole, journaled before the first change, and revertable from History."
         )
-        self.busy = False
         self._applying = False
+        self._writing_tokens = False
         self.moves: tuple[GroupMove, ...] = ()
         self.pending_tokens = 0
+        self._tokens_card: QtWidgets.QFrame | None = None
 
         self.preview_button = QtWidgets.QPushButton("Preview")
         self.apply_button = QtWidgets.QPushButton("Apply")
@@ -97,10 +98,10 @@ class RenamePage(Page):
         return commands
 
     def start(self, apply: bool) -> None:
-        if self.busy:
+        if not self.begin_work("Rename apply" if apply else "Rename preview"):
             return
-        self.busy = True
         self._applying = apply
+        self._writing_tokens = False
         self.preview_button.setEnabled(False)
         self.apply_button.setEnabled(False)
         self.work_started()
@@ -143,13 +144,13 @@ class RenamePage(Page):
         assert isinstance(result, tuple)
         report, moves, inject_report = result
         assert isinstance(report, Report)
-        self.busy = False
+        self.end_work()
         self.preview_button.setEnabled(True)
         self.work_finished()
         self.moves = () if applied else moves
         self.apply_button.setEnabled(bool(self.moves))
         if applied:
-            failed = sum(1 for f in report.findings if f.bucket.value == "apply-failed")
+            failed = sum(1 for f in report.findings if f.bucket is Bucket.APPLY_FAILED)
             self.status(
                 f"Applied {len(moves)} group(s)"
                 + (f", {failed} failed" if failed else "")
@@ -176,9 +177,9 @@ class RenamePage(Page):
             self.start_tokens()
 
     def start_tokens(self) -> None:
-        if self.busy:
+        if not self.begin_work("Token write"):
             return
-        self.busy = True
+        self._writing_tokens = True
         self.tokens_button.setEnabled(False)
         self.work_started()
         self.status("Writing tokens…")
@@ -197,7 +198,8 @@ class RenamePage(Page):
 
     def _tokens_written(self, result: object) -> None:
         assert isinstance(result, Report)
-        self.busy = False
+        self.end_work()
+        self._writing_tokens = False
         self.preview_button.setEnabled(True)
         self.work_finished()
         written = sum(1 for f in result.findings if f.bucket is Bucket.TOKEN_WRITTEN)
@@ -218,6 +220,13 @@ class RenamePage(Page):
         ]
         self.pending_tokens = len(pending)
         self.tokens_button.setEnabled(bool(pending))
+        # one tokens card at a time: writing replaces the pending card
+        # instead of stacking a second one under it
+        if self._tokens_card is not None:
+            self._tokens_card.hide()
+            self._tokens_card.setParent(None)
+            self._tokens_card.deleteLater()
+            self._tokens_card = None
         if not (pending or written or blocked):
             return
 
@@ -262,20 +271,38 @@ class RenamePage(Page):
             step_label = QtWidgets.QLabel(step)
             step_label.setObjectName("sub")
             layout.addWidget(step_label)
+        self._tokens_card = frame
         self.add_card(frame)
 
     def _failed(self, message: str) -> None:
-        self.busy = False
+        writing_tokens = self._writing_tokens
+        applying = self._applying
+        self.end_work()
+        self._writing_tokens = False
         self.preview_button.setEnabled(True)
         self.apply_button.setEnabled(bool(self.moves))
+        self.tokens_button.setEnabled(bool(self.pending_tokens))
         self.work_finished()
-        self.status(message)
+        if writing_tokens:
+            self.show_failure("Token write", message)
+        elif applying:
+            self.show_failure("Rename", message)
+        else:
+            self.status(message)
 
     def _stopped(self) -> None:
-        self.busy = False
+        writing_tokens = self._writing_tokens
+        self.end_work()
+        self._writing_tokens = False
         self.preview_button.setEnabled(True)
+        self.tokens_button.setEnabled(bool(self.pending_tokens))
         self.work_finished()
-        if self._applying:
+        if writing_tokens:
+            self.status(
+                "Stopped mid-write — tokens already written stay in the files;"
+                " run Preview to see what remains pending."
+            )
+        elif self._applying:
             self.status(
                 "Stopped mid-apply — completed groups are journaled; finish or"
                 " revert them from History."
@@ -286,6 +313,7 @@ class RenamePage(Page):
 
     def render_plan(self, moves: tuple[GroupMove, ...]) -> None:
         self.clear_body()
+        self._tokens_card = None  # clear_body already deleted the widget
         total = sum(len(move.renames) for move in moves)
         if not moves:
             self.add_card(rich_label("Every name matches — nothing to rename."))

@@ -45,8 +45,8 @@ class OrganizePage(Page):
 
         self.source_label = QtWidgets.QLabel("No folder selected")
         self.source_label.setObjectName("sub")
-        browse_button = QtWidgets.QPushButton("Choose folder…")
-        browse_button.clicked.connect(self.browse)
+        self.browse_button = QtWidgets.QPushButton("Choose folder…")
+        self.browse_button.clicked.connect(self.browse)
         self.analyze_button = QtWidgets.QPushButton("Analyze")
         self.analyze_button.setObjectName("primary")
         self.analyze_button.setEnabled(False)
@@ -54,7 +54,7 @@ class OrganizePage(Page):
         self.import_button = QtWidgets.QPushButton("Open in Import…")
         self.import_button.setEnabled(False)
         self.import_button.clicked.connect(self.hand_off)
-        self.toolbar.addWidget(browse_button)
+        self.toolbar.addWidget(self.browse_button)
         self.toolbar.addWidget(self.analyze_button)
         self.toolbar.addWidget(self.import_button)
         self.toolbar.addWidget(self.source_label, 1)
@@ -73,6 +73,9 @@ class OrganizePage(Page):
         ]
 
     def browse(self) -> None:
+        if self.busy:
+            self.status("An operation is running — the folder stays unchanged.")
+            return
         chosen = QtWidgets.QFileDialog.getExistingDirectory(self, "Choose a folder to triage")
         if chosen:
             self.source = Path(chosen)
@@ -96,9 +99,11 @@ class OrganizePage(Page):
                 return
 
     def start(self) -> None:
-        if self.busy or self.source is None:
+        if self.source is None:
             return
-        self.busy = True
+        if not self.begin_work("Organize"):
+            return
+        self.browse_button.setEnabled(False)
         self.analyze_button.setEnabled(False)
         self.work_started()
         self.status("Analyzing the folder…")
@@ -133,7 +138,8 @@ class OrganizePage(Page):
         self.status("Stopped — organize never changes anything anyway.")
 
     def _reset(self) -> None:
-        self.busy = False
+        self.end_work()
+        self.browse_button.setEnabled(True)
         self.analyze_button.setEnabled(self.source is not None)
         self.work_finished()
 
@@ -194,7 +200,7 @@ class OrganizePage(Page):
                 )
                 layout.addWidget(
                     rich_label(
-                        f'<span style="color:{color}">{buckets.TITLE[finding.bucket]}</span>'
+                        f'<span style="color:{color}">{buckets.title_of(finding.bucket)}</span>'
                         f'&nbsp;&nbsp;<span style="{MONO}">{html.escape(finding.path.name)}'
                         f"</span>{detail}"
                     )

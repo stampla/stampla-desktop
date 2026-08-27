@@ -17,7 +17,7 @@ from stampla.apply import ApplyResult, apply_plan, undo_journal
 from stampla.journal import Journal, journal_summaries
 
 from stampla_desktop.base import Page, card, cli, confirm, rich_label, when
-from stampla_desktop.worker import run_async
+from stampla_desktop.worker import run_monitored
 
 if TYPE_CHECKING:
     from stampla_desktop.app import MainWindow
@@ -44,20 +44,26 @@ class HistoryPage(Page):
             "Every change Stampla has applied to this archive, newest first."
             " Undo re-verifies copied files before deleting anything."
         )
-        self.busy = False
         refresh_button = QtWidgets.QPushButton("Refresh")
         refresh_button.clicked.connect(self.refresh)
         self.toolbar.addWidget(refresh_button)
         self.toolbar.addStretch()
-        self.add_cli(
-            lambda: [
-                ("List history", cli("history", "--root", self.archive.root)),
-                ("Undo the most recent", cli("undo", "--latest")),
-            ]
-        )
+        self.add_work_controls()
+        self.add_cli(self.cli_commands)
         self.refresh()
 
+    def cli_commands(self) -> list[tuple[str, str]]:
+        rows = [("List history", cli("history", "--root", self.archive.root))]
+        # never teach bare --latest: it takes the newest journal across
+        # EVERY archive on this machine, not this one's newest run
+        summaries = journal_summaries(root=self.archive.root)
+        if summaries:
+            rows.append(("Undo this archive's newest run", cli("undo", summaries[-1].path)))
+        return rows
+
     def refresh(self) -> None:
+        if self.busy:
+            return  # the finished handler refreshes; never yank rows mid-run
         self.clear_body()
         summaries = journal_summaries(root=self.archive.root)
         if not summaries:
@@ -114,6 +120,9 @@ class HistoryPage(Page):
             self.add_card(frame)
 
     def confirm_undo(self, path: Path) -> None:
+        if self.busy:
+            self.status("An operation is already running.")
+            return
         if not confirm(
             self,
             "Undo",
@@ -122,18 +131,24 @@ class HistoryPage(Page):
             command=cli("undo", path),
         ):
             return
-        if self.busy:
+        if not self.begin_work("Undo"):
             return
-        self.busy = True
+        self.work_started()
         self.status("Undoing…")
-        run_async(
+        run_monitored(
             self,
-            lambda: undo_journal(Journal.load(path)),
+            lambda monitor: undo_journal(Journal.load(path), monitor=monitor),
             self._undone,
             self._failed,
+            on_progress=self.show_progress,
+            on_stopped=self._stopped,
+            cancel=self.cancel,
         )
 
     def confirm_resume(self, path: Path) -> None:
+        if self.busy:
+            self.status("An operation is already running.")
+            return
         if not confirm(
             self,
             "Resume",
@@ -142,23 +157,35 @@ class HistoryPage(Page):
             command=cli("resume", path),
         ):
             return
-        if self.busy:
+        if not self.begin_work("Resume"):
             return
-        self.busy = True
+        self.work_started()
         self.status("Resuming…")
-        run_async(
+        run_monitored(
             self,
-            lambda: apply_plan(Journal.load(path)),
+            lambda monitor: apply_plan(Journal.load(path), monitor=monitor),
             self._resumed,
             self._failed,
+            on_progress=self.show_progress,
+            on_stopped=self._stopped,
+            cancel=self.cancel,
         )
 
     def _failed(self, message: str) -> None:
-        self.busy = False
-        self.status(message)
+        self.end_work()
+        self.work_finished()
+        self.show_failure("Undo / resume", message)
+        self.refresh()
+
+    def _stopped(self) -> None:
+        self.end_work()
+        self.work_finished()
+        self.status("Stopped at a safe point — finish or revert from the list below.")
+        self.refresh()
 
     def _undone(self, result: object) -> None:
-        self.busy = False
+        self.end_work()
+        self.work_finished()
         assert isinstance(result, ApplyResult)
         self.status(
             f"Undo: {len(result.applied)} group(s) reverted,"
@@ -167,7 +194,8 @@ class HistoryPage(Page):
         self.refresh()
 
     def _resumed(self, result: object) -> None:
-        self.busy = False
+        self.end_work()
+        self.work_finished()
         assert isinstance(result, ApplyResult)
         self.status(
             f"Resume: {len(result.applied)} group(s) applied,"

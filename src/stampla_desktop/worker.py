@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
+import traceback
 from collections.abc import Callable
 
 from PySide6 import QtCore
@@ -81,6 +82,9 @@ def run_monitored(
         except Cancelled:
             task.stopped.emit()
         except Exception as exc:
+            # the full traceback goes to stderr for diagnosis; the UI
+            # gets the message (multi-line details included)
+            traceback.print_exc()
             task.failed.emit(f"{type(exc).__name__}: {exc}")
         else:
             task.done.emit(result)

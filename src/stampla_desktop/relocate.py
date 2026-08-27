@@ -52,7 +52,6 @@ class RelocatePage(Page):
             "Report-only until Apply: files whose name says they belong in another"
             " folder are moved there, whole groups at a time."
         )
-        self.busy = False
         self._applying = False
         self.moves: tuple[GroupMove, ...] = ()
 
@@ -81,9 +80,8 @@ class RelocatePage(Page):
         ]
 
     def start(self, apply: bool) -> None:
-        if self.busy:
+        if not self.begin_work("Relocate apply" if apply else "Relocate plan"):
             return
-        self.busy = True
         self._applying = apply
         self.plan_button.setEnabled(False)
         self.apply_button.setEnabled(False)
@@ -120,7 +118,7 @@ class RelocatePage(Page):
         assert isinstance(result, tuple)
         report, moves = result
         assert isinstance(report, Report)
-        self.busy = False
+        self.end_work()
         self.plan_button.setEnabled(True)
         self.work_finished()
         self.moves = () if applied else moves
@@ -149,14 +147,18 @@ class RelocatePage(Page):
         self.render_plan(report)
 
     def _failed(self, message: str) -> None:
-        self.busy = False
+        applying = self._applying
+        self.end_work()
         self.plan_button.setEnabled(True)
         self.apply_button.setEnabled(bool(self.moves))
         self.work_finished()
-        self.status(message)
+        if applying:
+            self.show_failure("Relocate", message)
+        else:
+            self.status(message)
 
     def _stopped(self) -> None:
-        self.busy = False
+        self.end_work()
         self.plan_button.setEnabled(True)
         self.work_finished()
         if self._applying:
@@ -218,9 +220,9 @@ class RelocatePage(Page):
         layout.addWidget(
             rich_label(
                 f'<span style="color:{color}"><b>{len(misplaced):,} · '
-                f"{buckets.TITLE[Bucket.MISPLACED]}</b></span>"
+                f"{buckets.title_of(Bucket.MISPLACED)}</b></span>"
                 f'&nbsp;&nbsp;<span style="color:{theme.PALETTE["muted"]}">'
-                f"{buckets.EXPLAIN[Bucket.MISPLACED]}</span>"
+                f"{buckets.explain_of(Bucket.MISPLACED)}</span>"
             )
         )
         root = self.archive.root

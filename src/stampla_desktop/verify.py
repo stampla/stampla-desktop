@@ -31,7 +31,6 @@ class VerifyPage(Page):
     def __init__(self, window: MainWindow) -> None:
         super().__init__("Verify", window)
         self.subtitle.setText(BLURB)
-        self.busy = False
 
         self.quick_button = QtWidgets.QPushButton("Check names (fast)")
         self.full_button = QtWidgets.QPushButton("Check everything")
@@ -61,9 +60,8 @@ class VerifyPage(Page):
         ]
 
     def start(self, skip_hash: bool) -> None:
-        if self.busy:
+        if not self.begin_work("Verify"):
             return
-        self.busy = True
         self.quick_button.setEnabled(False)
         self.full_button.setEnabled(False)
         self.work_started()
@@ -106,7 +104,7 @@ class VerifyPage(Page):
         self.status("Stopped — a check changes nothing, so there is nothing to clean up.")
 
     def _reset(self) -> None:
-        self.busy = False
+        self.end_work()
         self.quick_button.setEnabled(True)
         self.full_button.setEnabled(True)
         self.work_finished()
@@ -134,9 +132,9 @@ class VerifyPage(Page):
             layout.addWidget(
                 rich_label(
                     f'<span style="color:{color}"><b>{len(findings):,} · '
-                    f"{buckets.TITLE[bucket]}</b></span>"
+                    f"{buckets.title_of(bucket)}</b></span>"
                     f'&nbsp;&nbsp;<span style="color:{theme.PALETTE["muted"]}">'
-                    f"{buckets.EXPLAIN[bucket]}</span>"
+                    f"{buckets.explain_of(bucket)}</span>"
                 )
             )
             root = self.archive.root

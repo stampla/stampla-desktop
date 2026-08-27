@@ -7,6 +7,7 @@ engine as the CLI. Views are named after the commands they wrap.
 
 from __future__ import annotations
 
+import os
 import shutil
 import signal
 import sys
@@ -56,6 +57,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.archive = archive
         self.settings = QtCore.QSettings("stampla", "desktop")
         self._cli_pages: list[Page] = []
+        self._operation: tuple[Page, str] | None = None
+        self._closing = False
         self.setWindowTitle(f"Stampla — {archive.root.name}")
 
         self.sidebar = QtWidgets.QListWidget()
@@ -134,6 +137,57 @@ class MainWindow(QtWidgets.QMainWindow):
                 widget.refresh()
         for page in self._cli_pages:
             page.cli_panel.refresh()
+
+    def acquire_operation(self, page: Page, label: str) -> bool:
+        """One operation at a time across every view; ``False`` = refused."""
+        if self._operation is not None:
+            owner, running = self._operation
+            if owner is not page:
+                self.statusBar().showMessage(
+                    f"{running} is still running — stop it or let it finish first."
+                )
+                return False
+        self._operation = (page, label)
+        return True
+
+    def release_operation(self, page: Page) -> None:
+        if self._operation is not None and self._operation[0] is page:
+            self._operation = None
+        if self._closing and self._operation is None:
+            self.close()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        """Never kill a worker mid-apply by closing the window.
+
+        A daemon thread dies without unwinding — the archive lock, a
+        half-copied group and its journal would be left behind. Stop at
+        the library's next safe point first, then close.
+        """
+        if self._operation is None:
+            event.accept()
+            return
+        page, label = self._operation
+        if not self._closing:
+            box = QtWidgets.QMessageBox(self)
+            box.setWindowTitle("Stampla")
+            box.setText(f"{label} is still running.")
+            box.setInformativeText(
+                "Closing now would interrupt it mid-run. Stop at the next safe"
+                " point and then close? Anything already applied is journaled"
+                " and can be finished or reverted from History."
+            )
+            stop = box.addButton("Stop and close", QtWidgets.QMessageBox.ButtonRole.AcceptRole)
+            box.addButton("Keep running", QtWidgets.QMessageBox.ButtonRole.RejectRole)
+            box.exec()
+            if box.clickedButton() is not stop:
+                event.ignore()
+                return
+            self._closing = True
+            cancel = getattr(page, "cancel", None)
+            if cancel is not None:
+                cancel.set()
+            self.statusBar().showMessage("Stopping — the window closes at the next safe point…")
+        event.ignore()
 
     def register_cli(self, page: Page) -> None:
         self._cli_pages.append(page)
@@ -238,6 +292,31 @@ def first_run_dialog() -> Path | None:
     return None
 
 
+#: where package managers put exiftool; a Finder-launched app gets
+#: launchd's bare PATH and would miss every one of these
+KNOWN_EXIFTOOL_DIRS = (
+    "/opt/homebrew/bin",  # Homebrew on Apple Silicon
+    "/usr/local/bin",  # Homebrew on Intel, and the exiftool .pkg
+    "/opt/local/bin",  # MacPorts
+)
+
+
+def ensure_exiftool_on_path() -> None:
+    """Make an installed exiftool visible to the core's PATH lookup.
+
+    From a terminal the shell profile has already set PATH; from Finder
+    the app inherits launchd's minimal one, and a perfectly installed
+    exiftool would read as missing — probe the usual prefixes instead.
+    """
+    if shutil.which("exiftool"):
+        return
+    for directory in KNOWN_EXIFTOOL_DIRS:
+        candidate = Path(directory) / "exiftool"
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            os.environ["PATH"] = directory + os.pathsep + os.environ.get("PATH", "")
+            return
+
+
 def exiftool_warning() -> str | None:
     """A user-facing explanation when ExifTool is absent, or None."""
     if shutil.which("exiftool"):
@@ -267,6 +346,7 @@ def main() -> int:
     # Ctrl+C from a terminal: Python's KeyboardInterrupt never fires inside
     # the Qt event loop, so restore the default handler and just terminate.
     signal.signal(signal.SIGINT, signal.SIG_DFL)
+    ensure_exiftool_on_path()
 
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("Stampla")

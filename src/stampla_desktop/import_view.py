@@ -57,8 +57,8 @@ class ImportPage(Page):
 
         self.source_label = QtWidgets.QLabel("No source selected")
         self.source_label.setObjectName("sub")
-        browse_button = QtWidgets.QPushButton("Choose card or folder…")
-        browse_button.clicked.connect(self.browse)
+        self.browse_button = QtWidgets.QPushButton("Choose card or folder…")
+        self.browse_button.clicked.connect(self.browse)
         self.preview_button = QtWidgets.QPushButton("Preview")
         self.preview_button.setEnabled(False)
         self.apply_button = QtWidgets.QPushButton("Import")
@@ -77,7 +77,7 @@ class ImportPage(Page):
             any("{shoot}" in tree.layout for tree in self.archive.config.trees)
         )
         self.shoot_edit.textChanged.connect(lambda _: self.cli_panel.refresh())
-        self.toolbar.addWidget(browse_button)
+        self.toolbar.addWidget(self.browse_button)
         self.toolbar.addWidget(self.preview_button)
         self.toolbar.addWidget(self.apply_button)
         self.toolbar.addWidget(self.shoot_edit)
@@ -108,6 +108,11 @@ class ImportPage(Page):
 
     def set_source(self, source: Path) -> None:
         """Select what to import; Organize hands folders over through this."""
+        if self.busy:
+            # swapping the source mid-run would render the finished
+            # result — the verdict included — under the wrong name
+            self.status("An operation is running — the source stays unchanged.")
+            return
         self.source = source
         self.source_label.setText(str(source))
         self.preview_button.setEnabled(True)
@@ -134,10 +139,12 @@ class ImportPage(Page):
             self.start(apply=True)
 
     def start(self, apply: bool) -> None:
-        if self.busy or self.source is None:
+        if self.source is None:
             return
-        self.busy = True
+        if not self.begin_work("Import" if apply else "Import preview"):
+            return
         self._applying = apply
+        self.browse_button.setEnabled(False)
         self.preview_button.setEnabled(False)
         self.apply_button.setEnabled(False)
         self.work_started()
@@ -182,7 +189,10 @@ class ImportPage(Page):
 
     def _failed(self, message: str) -> None:
         self._reset()
-        self.status(message)
+        if self._applying:
+            self.show_failure("Import", message)
+        else:
+            self.status(message)
 
     def _stopped(self) -> None:
         self._reset()
@@ -196,7 +206,8 @@ class ImportPage(Page):
             self.status("Stopped — planning changes nothing.")
 
     def _reset(self) -> None:
-        self.busy = False
+        self.end_work()
+        self.browse_button.setEnabled(True)
         self.preview_button.setEnabled(self.source is not None)
         self.work_finished()
 
@@ -209,7 +220,8 @@ class ImportPage(Page):
     ) -> None:
         self.clear_body()
         if verdict is not None:
-            self.add_card(_verdict_banner(verdict))
+            assert self.source is not None
+            self.add_card(_verdict_banner(verdict, self.source))
 
         counted: dict[Bucket, int] = {}
         for finding in report.findings:
@@ -280,7 +292,7 @@ class ImportPage(Page):
                 )
                 layout.addWidget(
                     rich_label(
-                        f'<span style="color:{color}">{buckets.TITLE[finding.bucket]}</span>'
+                        f'<span style="color:{color}">{buckets.title_of(finding.bucket)}</span>'
                         f'&nbsp;&nbsp;<span style="{MONO}">{html.escape(str(finding.path))}'
                         f"</span>{detail}"
                     )
@@ -321,7 +333,7 @@ class ImportPage(Page):
             self.add_card(frame)
 
 
-def _verdict_banner(verdict: ImportVerdict) -> QtWidgets.QFrame:
+def _verdict_banner(verdict: ImportVerdict, source: Path) -> QtWidgets.QFrame:
     frame = QtWidgets.QFrame()
     frame.setObjectName("banner")
     frame.setProperty("verdict", "safe" if verdict.safe_to_format else "unsafe")
@@ -353,8 +365,9 @@ def _verdict_banner(verdict: ImportVerdict) -> QtWidgets.QFrame:
     layout.addWidget(body_label)
     layout.addWidget(
         rich_label(
-            f'<span style="color:{theme.PALETTE["faint"]}">{verdict.imported} group(s)'
-            f" imported and verified · {verdict.already_imported} already in the archive"
+            f'<span style="color:{theme.PALETTE["faint"]}">{html.escape(str(source))}'
+            f" · {verdict.imported} group(s) imported and verified"
+            f" · {verdict.already_imported} already in the archive"
             f" · {verdict.ignored} file(s) ignored</span>"
         )
     )
