@@ -48,49 +48,6 @@ wheels = [
 ]
 
 [[package]]
-name = "stampla"
-version = "0.4.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "tzdata", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f6/63/27d6a63e2fdc5683d2a9c6eac9039e24a629bf026f25920408f15a63ffd8/stampla-0.4.0.tar.gz", hash = "sha256:90c3f063bdc194890735c7cee622c70ec626f5092e8796081aecd27e5fd00897", size = 142609, upload-time = "2026-07-10T23:14:59.643Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/2d/249d53fce14d647643a196e29c48a036dc3ebb70862e33790c8f0b19d31a/stampla-0.4.0-py3-none-any.whl", hash = "sha256:975f3ca2ef691b6d9972464af5d14725834b26b0adc65f8373ed03cfe8ad559d", size = 70626, upload-time = "2026-07-10T23:14:58.153Z" },
-]
-
-[[package]]
-name = "stampla-desktop"
-source = { editable = "." }
-dependencies = [
-    { name = "stampla" },
-    { name = "pyside6-essentials" },
-    { name = "tomlkit" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pyside6" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "stampla", specifier = ">=0.4" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13" },
-    { name = "pyside6", marker = "extra == 'dev'", specifier = ">=6.7" },
-    { name = "pyside6-essentials", specifier = ">=6.7" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
-    { name = "tomlkit", specifier = ">=0.12" },
-]
-provides-extras = ["dev"]
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -483,6 +440,49 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/52/b5/3f6fb2ee65b534193fb4ef713dd619dc31dadff5d12c16979a7699ad58be/shiboken6-6.11.1-cp310-abi3-win_amd64.whl", hash = "sha256:c2c6863aa80ec18c0f82cea3417837b279cdc60024ac17123461dc9042577df7", size = 1223647, upload-time = "2026-05-13T09:47:05.924Z" },
     { url = "https://files.pythonhosted.org/packages/98/d1/f15ca0e1666faae02c945f48e745ea35f8fcd8243b176109b4e2c4251f47/shiboken6-6.11.1-cp310-abi3-win_arm64.whl", hash = "sha256:7c8d9af17db4495d4fa5b1c393f218311c4855546b9dfa6a0bd21bcd66b55e9d", size = 1784170, upload-time = "2026-05-13T09:47:07.617Z" },
 ]
+
+[[package]]
+name = "stampla"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a3/47/9e8c209d608ad692a394a02fd4ffa8f7746f966be48c45aa1806ad2defd5/stampla-0.4.0.tar.gz", hash = "sha256:a474b3a90748c7420f910ecc3fdff85114a87b842b1f75b377c6963bc86ee571", size = 142516, upload-time = "2026-08-27T20:52:14.992Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4e/86/5c52aaf1e0db1ca18b092413527fbe95ed66a7ec2e4c58391cd57fcbfcb1/stampla-0.4.0-py3-none-any.whl", hash = "sha256:00b590012bfacad607b279685eab6d5dddb202009ec2f5626edd1ca10ecf30d1", size = 70119, upload-time = "2026-08-27T20:52:13.562Z" },
+]
+
+[[package]]
+name = "stampla-desktop"
+source = { editable = "." }
+dependencies = [
+    { name = "pyside6-essentials" },
+    { name = "stampla" },
+    { name = "tomlkit" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pyside6" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13" },
+    { name = "pyside6", marker = "extra == 'dev'", specifier = ">=6.7" },
+    { name = "pyside6-essentials", specifier = ">=6.7" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
+    { name = "stampla", specifier = ">=0.4" },
+    { name = "tomlkit", specifier = ">=0.12" },
+]
+provides-extras = ["dev"]
 
 [[package]]
 name = "tomli"
