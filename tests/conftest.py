@@ -46,7 +46,7 @@ def no_modal_dialogs(monkeypatch: pytest.MonkeyPatch) -> list[str]:
             return int(self.standardButton(default))
         return int(QtWidgets.QMessageBox.StandardButton.Cancel)
 
-    def record_static(kind: str):
+    def record_static(kind: str) -> object:
         def handler(*args: object, **_kwargs: object) -> QtWidgets.QMessageBox.StandardButton:
             text = str(args[2]) if len(args) > 2 else kind
             shown.append(f"{kind}: {text}")
