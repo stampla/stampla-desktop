@@ -69,15 +69,9 @@ EXPLAIN = {
         " detail, then retry or undo from History."
     ),
     Bucket.HASH_ERROR: "The file could not be read to compute its fingerprint.",
-    **(
-        {
-            Bucket.SCAN_ERROR: (
-                "A folder could not be listed, so files under it are"
-                " unaccounted for — nothing under it was checked or copied."
-            )
-        }
-        if hasattr(Bucket, "SCAN_ERROR")
-        else {}
+    Bucket.SCAN_ERROR: (
+        "A folder could not be listed, so files under it are"
+        " unaccounted for — nothing under it was checked or copied."
     ),
     Bucket.METADATA_UNREADABLE: "ExifTool could not read this file's metadata.",
     Bucket.DATE_MISMATCH: (

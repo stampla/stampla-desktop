@@ -5,6 +5,45 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-28
+
+### Fixed
+
+- Archive configurations created on Windows load: the default config
+  wrote the archive path with backslashes, which are escape sequences
+  inside a TOML string — every Windows-created config failed to parse.
+- The app finds ExifTool when launched from the Finder: a Finder
+  launch inherits the system's minimal PATH, so a Homebrew or MacPorts
+  install read as missing; the usual install prefixes are probed at
+  startup.
+- The packaged app no longer risks relaunching itself once per hash
+  worker (multiprocessing freeze support in the frozen bundle).
+- Closing the window mid-operation stops the work at the library's
+  next safe point first, instead of killing it mid-apply and leaving
+  the archive lock behind; a dialog offers Stop and close.
+- One operation at a time across all views: a second Preview, Apply,
+  Undo or Analyze anywhere is refused while one runs, instead of
+  fighting over the archive lock after minutes of planning. The
+  import source cannot be swapped mid-run, and the verdict banner
+  names the source it speaks for.
+- Undo and Resume in History show live progress with a Stop button,
+  refuse double-clicks before the confirm dialog, and their failures —
+  like every failed apply — open a dialog with the full error text
+  instead of one truncated status-bar line.
+- Stopping a token write no longer claims "a preview changes nothing";
+  written tokens are acknowledged and the pending card is replaced,
+  not stacked, after a write.
+- Settings refuses to save over a config edited on disk since the
+  form was loaded — Reload first — instead of silently overwriting
+  the external change.
+- The History panel's terminal command for undoing teaches the
+  archive-scoped journal path; a bare `undo --latest` reaches across
+  every archive on the machine.
+- Findings render for report buckets this build has never seen
+  (titles and colors fall back), so a newer library cannot crash a
+  view mid-paint; the `scan-error` alarm from stampla 0.5 is rendered
+  with its own title and explanation. Requires stampla >= 0.5.
+
 ## [0.2.0] - 2026-07-11
 
 ### Added

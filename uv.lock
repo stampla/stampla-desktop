@@ -443,14 +443,14 @@ wheels = [
 
 [[package]]
 name = "stampla"
-version = "0.4.0"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/47/9e8c209d608ad692a394a02fd4ffa8f7746f966be48c45aa1806ad2defd5/stampla-0.4.0.tar.gz", hash = "sha256:a474b3a90748c7420f910ecc3fdff85114a87b842b1f75b377c6963bc86ee571", size = 142516, upload-time = "2026-08-27T20:52:14.992Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6d/bd/00d51f599f32cf28c59d5d9db24b00b49a37b4fb529af68cb6b062fedd9b/stampla-0.5.0.tar.gz", hash = "sha256:ade4add6c249670ca5b5fb52f7bbcf1d53b9612ee4167ed30e28181f745d1f7a", size = 152522, upload-time = "2026-08-28T20:46:15.333Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4e/86/5c52aaf1e0db1ca18b092413527fbe95ed66a7ec2e4c58391cd57fcbfcb1/stampla-0.4.0-py3-none-any.whl", hash = "sha256:00b590012bfacad607b279685eab6d5dddb202009ec2f5626edd1ca10ecf30d1", size = 70119, upload-time = "2026-08-27T20:52:13.562Z" },
+    { url = "https://files.pythonhosted.org/packages/56/27/72ba1b974235636eb310676c706f5c80a115e8e227ffb78d7c6d332f7dca/stampla-0.5.0-py3-none-any.whl", hash = "sha256:8f97670bb98ca5d55fc8111808904c4c95808a35098350e348b4f3806a68e605", size = 75274, upload-time = "2026-08-28T20:46:13.765Z" },
 ]
 
 [[package]]
@@ -479,7 +479,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
-    { name = "stampla", specifier = ">=0.4,<0.6" },
+    { name = "stampla", specifier = ">=0.5,<0.6" },
     { name = "tomlkit", specifier = ">=0.12" },
 ]
 provides-extras = ["dev"]
