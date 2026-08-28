@@ -124,4 +124,4 @@ Development setup, checks and expectations:
 
 ## License
 
-[MIT](https://github.com/stampla/stampla-desktop/blob/main/LICENSE)
+[GPL-3.0-or-later](https://github.com/stampla/stampla-desktop/blob/main/LICENSE)
